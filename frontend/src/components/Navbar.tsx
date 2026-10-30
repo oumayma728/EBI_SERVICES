@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Building2,
   LogOut,
   User as UserIcon,
   ShieldAlert,
@@ -11,6 +10,9 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { User } from "../types";
+import { useLanguage } from "../LanguageContext";
+import LanguageSwitcher from "./LanguageSwitcher";
+import ebiLogo from "../assets/logo (2).png";
 
 interface NavbarProps {
   currentUser: User | null;
@@ -30,6 +32,7 @@ export default function Navbar({
   onOpenNotifications,
 }: NavbarProps) {
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const { t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/85 backdrop-blur-md">
@@ -39,15 +42,17 @@ export default function Navbar({
           className="flex cursor-pointer items-center space-x-2"
           onClick={() => setActiveTab("home")}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-900 text-white shadow-md">
-            <Building2 className="h-5 w-5" />
-          </div>
+          <img
+            src={ebiLogo}
+            alt="EBI Services"
+            className="h-12 w-20 shrink-0 object-contain"
+          />
           <div>
             <span className="font-display text-lg font-bold tracking-tight text-blue-950">
               EBI Services
             </span>
             <span className="block text-[10px] font-medium uppercase tracking-wider text-blue-600">
-              Solutions pour les entreprises
+              {t("Business solutions", "Solutions pour les entreprises")}
             </span>
           </div>
         </div>
@@ -55,9 +60,9 @@ export default function Navbar({
         {}
         <nav className="hidden md:flex space-x-8">
           {[
-            { id: "home", label: "Accueil" },
-            { id: "services", label: "Nos services" },
-            { id: "about", label: "À propos" },
+            { id: "home", label: t("Home", "Accueil") },
+            { id: "services", label: t("Services", "Nos services") },
+            { id: "about", label: t("About", "À propos") },
             { id: "contact", label: "Contact" },
           ].map((tab) => (
             <button
@@ -79,13 +84,15 @@ export default function Navbar({
 
         {}
         <div className="flex items-center space-x-4">
+          <LanguageSwitcher />
+
           {currentUser ? (
             <div className="flex items-center space-x-3">
               {}
               <button
                 onClick={onOpenNotifications}
                 className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-all"
-                title="Notifications"
+                title={t("Notifications", "Notifications")}
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
@@ -106,7 +113,7 @@ export default function Navbar({
                   }`}
                 >
                   <ShieldAlert className="h-3.5 w-3.5" />
-                  <span>Administration</span>
+                  <span>{t("Administration", "Administration")}</span>
                 </button>
               ) : (
                 <button
@@ -118,7 +125,7 @@ export default function Navbar({
                   }`}
                 >
                   <LayoutDashboard className="h-3.5 w-3.5" />
-                  <span>Espace client</span>
+                  <span>{t("Client portal", "Espace client")}</span>
                 </button>
               )}
 
@@ -128,7 +135,9 @@ export default function Navbar({
                   {currentUser.name}
                 </span>
                 <span className="block text-[10px] text-gray-500 capitalize">
-                  {currentUser.role}
+                  {currentUser.role === "admin"
+                    ? t("Administrator", "Administrateur")
+                    : t("Client", "Client")}
                 </span>
               </div>
 
@@ -136,7 +145,7 @@ export default function Navbar({
               <button
                 onClick={onLogout}
                 className="p-2 text-gray-500 hover:bg-gray-100 hover:text-red-600 rounded-full transition-all"
-                title="Se déconnecter"
+                title={t("Log out", "Se déconnecter")}
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -147,13 +156,13 @@ export default function Navbar({
                 onClick={() => setActiveTab("login")}
                 className="px-4 py-2 text-xs font-medium text-gray-700 hover:text-blue-900 transition-colors"
               >
-                Connexion
+                {t("Log in", "Connexion")}
               </button>
               <button
                 onClick={() => setActiveTab("register")}
                 className="rounded-lg bg-blue-900 px-4 py-2 text-xs font-medium text-white shadow-sm hover:bg-blue-950 transition-colors"
               >
-                Devenir client
+                {t("Become a client", "Devenir client")}
               </button>
             </div>
           )}

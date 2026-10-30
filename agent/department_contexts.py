@@ -4,7 +4,7 @@ EBI SERVICES – GENERAL PRESENTATION
 ====================================
 Name: EBI Services
 Slogan: "Votre Partenaire en Performance et Transformation"
-Founded: Paris, France (8+ years)
+Founded: Tunis, Tunisia (8+ years)
 CEO & Founder: Jean-Pierre Laurent
 Industries: Custom Software, IT Recruitment, Back-Office & Call Center Outsourcing
 Status: ISO 27001 Prepared
@@ -27,9 +27,9 @@ Services:
 4) Sourcing & Integration de profils
 
 Contact:
-- Phone: +33 1 74 88 99 00
-- Email: contact@ebiservices.com
-- Address: 12 Avenue des Champs-Elysees, Paris, France
+- Phone: +216 56 566 533
+- Email: lylia.aouani@gmail.com
+- Address: Rue El Hijaz, Kh Pacha Tunis 1073
 - Hours: 08:30 AM - 06:30 PM (CET), Monday to Friday
 
 ====================================
@@ -74,7 +74,7 @@ CONSULTATION BOOKING WORKFLOW:
 NAVIGATION GUIDE FOR USERS:
 - "I need a quote" -> "Register/login, go to Portal, click 'Request Quote'"
 - "Book a meeting" -> "Register/login, go to Portal, click 'Book Consultation'"
-- "Contact you" -> "Go to Contact page or call +33 1 74 88 99 00"
+- "Contact you" -> "Go to Contact page or call +216 56 566 533"
 - "Upload a document" -> "Login, go to Portal > Secure Vault"
 - "Chat with manager" -> "Login, go to Portal > Manager Chat"
 - "Forgot password" -> "Go to Login page, click 'Forgot Password'"

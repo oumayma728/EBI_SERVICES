@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Users2,
 } from "lucide-react";
+import { useLanguage } from "../LanguageContext";
 
 interface ServicesViewProps {
   setActiveTab: (tab: string) => void;
@@ -20,130 +21,171 @@ interface ServicesViewProps {
 
 type ActiveDept = "development" | "recruitment" | "tele-services";
 
-const departments = [
+export default function ServicesView({ setActiveTab }: ServicesViewProps) {
+  const { t } = useLanguage();
+  const [activeDept, setActiveDept] = useState<ActiveDept>("tele-services");
+  const departments = [
+  {
+    id: "tele-services",
+    label: t("Call center", "Call center"),
+    title: t("Call center & tele-services", "Call center & téléservices"),
+    description: t(
+      "Our core expertise: customer relations, call handling, support, administrative assistance and request processing tailored to your needs.",
+      "Notre expertise principale : relation client, gestion des appels, support, assistance administrative et traitement des demandes selon le périmètre convenu.",
+    ),
+    icon: <PhoneCall className="h-4 w-4" />,
+    services: [
+      {
+        icon: <PhoneCall className="h-6 w-6 text-blue-900" />,
+        title: t("Customer relations", "Centre de relation client"),
+        description: t(
+          "Managing customer interactions and supporting them throughout their journey.",
+          "Gestion des échanges avec vos clients et accompagnement de leur parcours.",
+        ),
+      },
+      {
+        icon: <ShieldCheck className="h-6 w-6 text-blue-900" />,
+        title: t("Customer support", "Support client"),
+        description: t(
+          "Answering questions and assisting your customers according to the guidelines we define together.",
+          "Réponse aux questions et assistance de vos clients selon les consignes définies ensemble.",
+        ),
+      },
+      {
+        icon: <ClipboardList className="h-6 w-6 text-blue-900" />,
+        title: t("Administrative assistance", "Assistance administrative"),
+        description: t(
+          "Handling administrative tasks to support your teams.",
+          "Prise en charge de tâches administratives pour accompagner vos équipes.",
+        ),
+      },
+      {
+        icon: <PhoneCall className="h-6 w-6 text-blue-900" />,
+        title: t("Call handling", "Gestion des appels"),
+        description: t(
+          "Answering, routing and tracking calls according to your organization.",
+          "Réception, orientation et suivi des appels selon votre organisation.",
+        ),
+      },
+      {
+        icon: <FileClock className="h-6 w-6 text-blue-900" />,
+        title: t("Request processing", "Traitement des demandes"),
+        description: t(
+          "Qualifying and handling requests received through your contact channels.",
+          "Qualification et traitement des demandes reçues par vos canaux de contact.",
+        ),
+      },
+      {
+        icon: <BriefcaseBusiness className="h-6 w-6 text-blue-900" />,
+        title: t("Back-office", "Back-office"),
+        description: t(
+          "Handling operational and administrative tasks to support your business.",
+          "Réalisation de tâches opérationnelles et de traitement administratif en soutien à votre activité.",
+        ),
+      },
+    ],
+  },
   {
     id: "development",
-    label: "Développement",
-    title: "Développement numérique",
-    description:
+    label: t("Development", "Développement"),
+    title: t("Digital development", "Développement numérique"),
+    description: t(
+      "We design, integrate and enhance digital solutions to meet your needs and business processes.",
       "Nous concevons, intégrons et faisons évoluer des solutions numériques en fonction de vos besoins et de vos processus métier.",
+    ),
     icon: <Laptop className="h-4 w-4" />,
     services: [
       {
         icon: <AppWindow className="h-6 w-6 text-blue-900" />,
-        title: "Applications web",
-        description:
+        title: t("Web applications", "Applications web"),
+        description: t(
+          "Design and development of web applications tailored to your users and organizational goals.",
           "Conception et développement d’applications web adaptées aux utilisateurs et aux objectifs de votre organisation.",
+        ),
       },
       {
         icon: <BriefcaseBusiness className="h-6 w-6 text-blue-900" />,
-        title: "Applications métier",
-        description:
+        title: t("Business applications", "Applications métier"),
+        description: t(
+          "Digital tools designed to support your activities and business processes.",
           "Outils numériques conçus pour accompagner vos activités et vos processus métier.",
+        ),
       },
       {
         icon: <Hammer className="h-6 w-6 text-blue-900" />,
-        title: "Solutions sur mesure",
-        description:
+        title: t("Custom solutions", "Solutions sur mesure"),
+        description: t(
+          "Solutions developed to match your context, needs and priorities.",
           "Développement de solutions adaptées à votre contexte, à vos besoins et à vos priorités.",
+        ),
       },
       {
         icon: <ClipboardList className="h-6 w-6 text-blue-900" />,
-        title: "Intégration",
-        description:
+        title: t("Integration", "Intégration"),
+        description: t(
+          "Integrating solutions and systems into your existing environment.",
           "Intégration de solutions et de systèmes à votre environnement existant.",
+        ),
       },
       {
         icon: <ShieldCheck className="h-6 w-6 text-blue-900" />,
-        title: "Maintenance évolutive et corrective",
-        description:
+        title: t("Enhancement and corrective maintenance", "Maintenance évolutive et corrective"),
+        description: t(
+          "Fixing issues and updating your applications as your business needs evolve.",
           "Correction des anomalies et évolution de vos applications selon les besoins de votre activité.",
+        ),
       },
     ],
   },
   {
     id: "recruitment",
-    label: "Recrutement",
-    title: "Recrutement et accompagnement RH",
-    description:
+    label: t("Recruitment", "Recrutement"),
+    title: t("Recruitment and HR support", "Recrutement et accompagnement RH"),
+    description: t(
+      "We help you source, assess and select candidates based on the profiles you are looking for.",
       "Nous vous accompagnons dans la recherche, l’évaluation et la sélection de candidats en fonction des profils recherchés.",
+    ),
     icon: <Users2 className="h-4 w-4" />,
     services: [
       {
         icon: <Search className="h-6 w-6 text-blue-900" />,
-        title: "Recherche et sélection de profils",
-        description:
+        title: t("Candidate sourcing and selection", "Recherche et sélection de profils"),
+        description: t(
+          "Identifying and selecting candidates according to the skills and criteria we define with you.",
           "Identification de candidats et sélection selon les compétences et critères définis avec vous.",
+        ),
       },
       {
         icon: <Laptop className="h-6 w-6 text-blue-900" />,
-        title: "Recrutement IT",
-        description:
+        title: t("IT recruitment", "Recrutement IT"),
+        description: t(
+          "Finding IT and technical profiles that match your needs.",
           "Recherche de profils informatiques et techniques correspondant à vos besoins.",
+        ),
       },
       {
         icon: <Users2 className="h-6 w-6 text-blue-900" />,
-        title: "Externalisation du recrutement",
-        description:
+        title: t("Recruitment outsourcing", "Externalisation du recrutement"),
+        description: t(
+          "Outsourcing selected stages or your entire recruitment process.",
           "Prise en charge externalisée de certaines étapes ou de l’ensemble de votre processus de recrutement.",
+        ),
       },
       {
         icon: <CheckCircle2 className="h-6 w-6 text-blue-900" />,
-        title: "Préqualification des candidats",
-        description:
+        title: t("Candidate pre-screening", "Préqualification des candidats"),
+        description: t(
+          "Initial candidate assessments based on the role requirements and your criteria.",
           "Évaluation initiale des candidatures à partir des exigences du poste et de vos critères.",
+        ),
       },
       {
         icon: <ClipboardList className="h-6 w-6 text-blue-900" />,
-        title: "Accompagnement RH",
-        description:
+        title: t("HR support", "Accompagnement RH"),
+        description: t(
+          "Supporting HR teams in organizing and tracking their recruitment needs.",
           "Appui aux équipes RH pour organiser et suivre leurs besoins de recrutement.",
-      },
-    ],
-  },
-  {
-    id: "tele-services",
-    label: "Téléservices",
-    title: "Téléservices et relation client",
-    description:
-      "Nous prenons en charge des activités de relation client, d’assistance et de traitement administratif selon le périmètre convenu.",
-    icon: <PhoneCall className="h-4 w-4" />,
-    services: [
-      {
-        icon: <PhoneCall className="h-6 w-6 text-blue-900" />,
-        title: "Centre de relation client",
-        description:
-          "Gestion des échanges avec vos clients et accompagnement de leur parcours.",
-      },
-      {
-        icon: <ShieldCheck className="h-6 w-6 text-blue-900" />,
-        title: "Support client",
-        description:
-          "Réponse aux questions et assistance de vos clients selon les consignes définies ensemble.",
-      },
-      {
-        icon: <ClipboardList className="h-6 w-6 text-blue-900" />,
-        title: "Assistance administrative",
-        description:
-          "Prise en charge de tâches administratives pour accompagner vos équipes.",
-      },
-      {
-        icon: <PhoneCall className="h-6 w-6 text-blue-900" />,
-        title: "Gestion des appels",
-        description:
-          "Réception, orientation et suivi des appels selon votre organisation.",
-      },
-      {
-        icon: <FileClock className="h-6 w-6 text-blue-900" />,
-        title: "Traitement des demandes",
-        description:
-          "Qualification et traitement des demandes reçues par vos canaux de contact.",
-      },
-      {
-        icon: <BriefcaseBusiness className="h-6 w-6 text-blue-900" />,
-        title: "Back-office",
-        description:
-          "Réalisation de tâches opérationnelles et de traitement administratif en soutien à votre activité.",
+        ),
       },
     ],
   },
@@ -155,28 +197,27 @@ const departments = [
   icon: React.ReactNode;
   services: { icon: React.ReactNode; title: string; description: string }[];
 }[];
-
-export default function ServicesView({ setActiveTab }: ServicesViewProps) {
-  const [activeDept, setActiveDept] = useState<ActiveDept>("development");
   const department = departments.find((item) => item.id === activeDept)!;
 
   return (
     <div className="space-y-12 py-8">
       <section className="mx-auto max-w-7xl space-y-3 px-4 pt-8 text-center sm:px-6 lg:px-8">
         <span className="text-xs font-bold uppercase tracking-widest text-blue-700">
-          Nos services
+          {t("Our services", "Nos services")}
         </span>
         <h1 className="font-display text-3xl font-extrabold text-slate-900 sm:text-5xl">
-          Des expertises au service de vos besoins
+          {t("Expertise to meet your needs", "Des expertises au service de vos besoins")}
         </h1>
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-600">
-          EBI Services intervient dans trois domaines complémentaires.
-          Sélectionnez un domaine pour découvrir les services proposés.
+          {t(
+            "Call center services are our primary focus, complemented by digital development and recruitment. Select an area to explore our services.",
+            "EBI Services met le Call center en premier plan, puis complète son offre par le développement et le recrutement. Sélectionnez un domaine pour découvrir les services proposés.",
+          )}
         </p>
       </section>
 
       <section
-        aria-label="Domaines de services"
+        aria-label={t("Service areas", "Domaines de services")}
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
       >
         <div className="flex justify-center overflow-x-auto border-b border-gray-200">
@@ -237,17 +278,19 @@ export default function ServicesView({ setActiveTab }: ServicesViewProps) {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl space-y-4 rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
           <h2 className="font-display text-xl font-bold text-slate-950">
-            Parlons de votre besoin
+            {t("Let's discuss your needs", "Parlons de votre besoin")}
           </h2>
           <p className="text-sm leading-relaxed text-gray-600">
-            Présentez votre projet à notre équipe pour être orienté vers le bon
-            interlocuteur et définir les prochaines étapes.
+            {t(
+              "Tell our team about your project. We will connect you with the right person and define the next steps.",
+              "Présentez votre projet à notre équipe pour être orienté vers le bon interlocuteur et définir les prochaines étapes.",
+            )}
           </p>
           <button
             onClick={() => setActiveTab("contact")}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-900 px-5 py-3 text-sm font-semibold text-white shadow transition hover:bg-blue-950"
           >
-            Contacter notre équipe
+            {t("Contact our team", "Contacter notre équipe")}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

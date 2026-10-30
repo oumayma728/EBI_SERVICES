@@ -1,34 +1,42 @@
 import React from "react";
+import { useLanguage } from "../LanguageContext";
 
 export default function PrivacyView() {
+  const { t } = useLanguage();
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 text-left space-y-6">
-      <h1 className="font-display text-3xl font-extrabold text-slate-900">Privacy Policy</h1>
-      <span className="text-xs text-gray-400 block">Last updated: July 9, 2026</span>
+      <h1 className="font-display text-3xl font-extrabold text-slate-900">{t("Privacy Policy", "Politique de confidentialité")}</h1>
+      <span className="text-xs text-gray-400 block">{t("Last updated: July 9, 2026", "Dernière mise à jour : 9 juillet 2026")}</span>
 
       <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-xs text-gray-600 space-y-4 leading-relaxed">
         <p>
-          At EBI Services, we prioritize secure data containment. This Privacy Policy details how we compile,
-          encrypt, and secure operational lead details, quotation documents, chat transcripts, and schedules
-          across our SaaS platform.
+          {t(
+            "At EBI Services, we prioritize data security. This Privacy Policy explains how we collect, encrypt and protect lead information, quotes, chat transcripts and schedules across our platform.",
+            "Chez EBI Services, nous accordons une grande importance à la sécurité des données. Cette politique explique comment nous collectons, chiffrons et protégeons les informations des prospects, les devis, les conversations et les rendez-vous sur notre plateforme.",
+          )}
         </p>
 
-        <h3 className="font-bold text-slate-900">1. Data Scoping and Storage</h3>
+        <h3 className="font-bold text-slate-900">{t("1. Data collection and storage", "1. Collecte et stockage des données")}</h3>
         <p>
-          Any technical requirements documents or base64 files uploaded inside our Client Portal secure vault
-          are encrypted at rest using industry-grade frameworks. We do not Sell or distribute corporate logs.
+          {t(
+            "Technical requirements and files uploaded to the secure client portal are protected using industry-standard safeguards. We do not sell or distribute corporate records.",
+            "Les documents techniques et fichiers téléversés dans l’espace sécurisé sont protégés selon les normes du secteur. Nous ne vendons ni ne distribuons les données de l’entreprise.",
+          )}
         </p>
 
-        <h3 className="font-bold text-slate-900">2. Cookies and Sandbox Environments</h3>
+        <h3 className="font-bold text-slate-900">{t("2. Cookies and browser storage", "2. Cookies et stockage du navigateur")}</h3>
         <p>
-          Since our application renders inside highly-secured sandboxed browser iframe layouts, we employ
-          non-tracking cookie state markers (storing active sessions purely inside localized client-side
-          browser localStorage buckets) to ensure compliance with General Data Protection Regulation (GDPR)
-          protocols.
+          {t(
+            "Our application uses browser storage to maintain your session and does not use tracking cookies for this purpose. We handle personal data in accordance with applicable data protection requirements.",
+            "Notre application utilise le stockage du navigateur pour maintenir votre session et n’emploie pas de cookies de suivi à cette fin. Nous traitons les données personnelles conformément aux règles applicables en matière de protection des données.",
+          )}
         </p>
 
         <p>
-          For support regarding data purging or compliance audits, contact compliance@ebiservices.com.
+          {t(
+            "For questions about data deletion or compliance, contact compliance@ebiservices.com.",
+            "Pour toute question concernant la suppression des données ou la conformité, contactez compliance@ebiservices.com.",
+          )}
         </p>
       </div>
     </div>

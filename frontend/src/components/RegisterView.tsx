@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import { Building2, UserCheck, AlertCircle } from "lucide-react";
+import { UserCheck, AlertCircle } from "lucide-react";
 import { clientDb } from "../clientDb";
 import { Conversation } from "../types";
+import { useLanguage } from "../LanguageContext";
+import ebiLogo from "../assets/logo (2).png";
 
 interface RegisterViewProps {
   onNavigate: (tab: string) => void;
 }
 
 export default function RegisterView({ onNavigate }: RegisterViewProps) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -52,7 +55,7 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
 
       const exists = users.some((u) => u.email.toLowerCase() === email.toLowerCase());
       if (exists) {
-        setError("An account with this email address already exists.");
+        setError(t("An account with this email address already exists.", "Un compte associé à cette adresse e-mail existe déjà."));
         return;
       }
 
@@ -106,18 +109,20 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
         onNavigate("login");
       }, 2000);
     } catch (e) {
-      setError("Failed to register.");
+      setError(t("Failed to register.", "Échec de l’inscription."));
     }
   };
 
   return (
     <div className="mx-auto max-w-md px-4 py-16 text-left space-y-6">
       <div className="text-center space-y-2">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-900 text-white shadow-md">
-          <Building2 className="h-6 w-6" />
-        </div>
-        <h1 className="font-display text-2xl font-bold text-slate-900">Become Portal Client</h1>
-        <p className="text-xs text-gray-500">Register in seconds to request instant formal pricing quotes.</p>
+        <img
+          src={ebiLogo}
+          alt="EBI Services"
+          className="mx-auto h-20 w-32 object-contain"
+        />
+        <h1 className="font-display text-2xl font-bold text-slate-900">{t("Create your client account", "Créer votre espace client")}</h1>
+        <p className="text-xs text-gray-500">{t("Register to submit requests and receive personalized quotes.", "Inscrivez-vous pour soumettre vos demandes et recevoir des devis personnalisés.")}</p>
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
@@ -126,8 +131,8 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
             <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-700">
               <UserCheck className="h-5 w-5" />
             </div>
-            <h3 className="font-display text-sm font-bold text-green-900">Registration Successful</h3>
-            <p className="text-xs text-green-800">Your account has been created. A verification email has been sent — please check your inbox and verify your email before logging in.</p>
+            <h3 className="font-display text-sm font-bold text-green-900">{t("Registration successful", "Inscription réussie")}</h3>
+            <p className="text-xs text-green-800">{t("Your account has been created. A verification email has been sent. Please check your inbox and verify your email before logging in.", "Votre compte a été créé. Un e-mail de vérification a été envoyé. Consultez votre boîte de réception et vérifiez votre adresse avant de vous connecter.")}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -139,11 +144,11 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
             )}
 
             <div>
-              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Your Full Name *</label>
+              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">{t("Full name *", "Nom complet *")}</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Marc Dubreuil"
+                placeholder={t("e.g. Jane Smith", "ex. Marc Dubreuil")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 p-2.5 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -151,10 +156,10 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Company / Organization</label>
+              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">{t("Company / organization", "Entreprise / organisation")}</label>
               <input
                 type="text"
-                placeholder="e.g. Carrefour Logistics"
+                placeholder={t("e.g. Acme Inc.", "ex. Carrefour Logistics")}
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 p-2.5 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -162,11 +167,11 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Corporate Email Address *</label>
+              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">{t("Email address *", "Adresse e-mail *")}</label>
               <input
                 type="email"
                 required
-                placeholder="e.g. marc.d@carrefour.fr"
+                placeholder={t("e.g. jane@company.com", "ex. marc.d@carrefour.fr")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 p-2.5 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -174,7 +179,7 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Password *</label>
+              <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">{t("Password *", "Mot de passe *")}</label>
               <input
                 type="password"
                 required
@@ -189,16 +194,16 @@ export default function RegisterView({ onNavigate }: RegisterViewProps) {
               type="submit"
               className="w-full bg-blue-900 hover:bg-blue-950 text-white rounded-lg py-2.5 text-xs font-semibold shadow-md transition cursor-pointer"
             >
-              Complete Provisioning
+              {t("Create account", "Créer le compte")}
             </button>
           </form>
         )}
       </div>
 
       <div className="text-center text-xs text-gray-500">
-        Already have an account?{" "}
+        {t("Already have an account? ", "Vous avez déjà un compte ? ")}
         <button onClick={() => onNavigate("login")} className="text-blue-900 font-bold hover:underline">
-          Login here
+          {t("Log in", "Se connecter")}
         </button>
       </div>
     </div>

@@ -20,8 +20,9 @@ import { apiGetMe } from "./api/auth";
 import { apiGetNotifications } from "./api/notifications";
 import { post } from "./api/client";
 import VerifyEmailView from "./components/VerifyEmailView";
+import { LanguageProvider } from "./LanguageContext";
 
-export default function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState<string>("home");
   const [pendingBooking, setPendingBooking] = useState(false);
   const [pendingAppointments, setPendingAppointments] = useState(false);
@@ -235,5 +236,13 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }

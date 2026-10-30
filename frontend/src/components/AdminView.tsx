@@ -73,6 +73,7 @@ import {
 } from "../api/leads";
 import { apiGetAllAppointments, apiUpdateAppointmentStatus } from "../api/appointments";
 import { apiDownloadDocument, apiGetDocuments, apiUploadDocumentForClient, type ApiDocument } from "../api/documents";
+import { useLanguage } from "../LanguageContext";
 
 interface AdminViewProps {
   currentUser: User;
@@ -80,6 +81,7 @@ interface AdminViewProps {
 }
 
 export default function AdminView({ currentUser, token }: AdminViewProps) {
+  const { language, t } = useLanguage();
   const [adminSubTab, setAdminSubTab] = useState<
     "dashboard" | "crm" | "quotes" | "documents" | "appointments" | "messaging" | "settings" | "logs"
   >("dashboard");
@@ -102,7 +104,10 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
   const [selectedReq, setSelectedReq] = useState<QuoteRequest | null>(null);
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteTerms, setQuoteTerms] = useState(
-    "Net 30. 40% upfront, 30% intermediate milestone, 30% delivery. Includes standard 6-month technical support warranty.",
+    t(
+      "Net 30. 40% upfront, 30% intermediate milestone, 30% delivery. Includes standard 6-month technical support warranty.",
+      "Paiement net à 30 jours. 40 % d’avance, 30 % à l’étape intermédiaire et 30 % à la livraison. Comprend une garantie standard de support technique de 6 mois.",
+    ),
   );
   const [isIssuingQuote, setIsIssuingQuote] = useState(false);
 
@@ -145,7 +150,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       clearInterval(interval);
       clearInterval(messagingInterval);
     };
-  }, [token]);
+  }, [token, language]);
 
   const fetchAdminData = async () => {
     const isApiSession = localStorage.getItem("ebi_auth_mode") === "api";
@@ -160,7 +165,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         id: d._id,
         userId: typeof d.client === 'string' ? d.client : d.client?._id || '',
         userEmail: typeof d.client === 'object' && d.client !== null ? d.client.email : undefined,
-        clientName: typeof d.client === 'object' && d.client !== null ? d.client.fullname : 'Client inconnu',
+        clientName: typeof d.client === 'object' && d.client !== null ? d.client.fullname : t("Unknown client", "Client inconnu"),
         company: typeof d.client === 'object' && d.client !== null ? d.client.entreprise || '' : '',
         industry: d.secteur || '',
         projectType: d.service && typeof d.service === 'object' ? d.service.nom || '' : '',
@@ -219,7 +224,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         setSelectedDocumentClientId((current) => current || clients[0]?._id || "");
       } catch (error) {
         console.error("Could not load document exchange data.", error);
-        setDocumentActionMessage(error instanceof Error ? error.message : "Impossible de charger les documents.");
+        setDocumentActionMessage(error instanceof Error ? error.message : t("Could not load documents.", "Impossible de charger les documents."));
       }
 
       try {
@@ -321,7 +326,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       const analyticsQuotes = isApiSession ? apiQuoteData : rQuotes;
 
       if (!analyticsLeads || !analyticsRequests || !analyticsQuotes || (isApiSession && !apiLeadsLoaded)) {
-        setAnalyticsError("Impossible de charger toutes les données des statistiques. Vérifiez la connexion au serveur.");
+        setAnalyticsError(t("Could not load all analytics data. Check the server connection.", "Impossible de charger toutes les données des statistiques. Vérifiez la connexion au serveur."));
         return;
       }
 
@@ -373,7 +378,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             && createdAt.getMonth() === date.getMonth();
         });
         return {
-          name: date.toLocaleDateString("fr-FR", { month: "short" }),
+          name: date.toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", { month: "short" }),
           revenue: monthQuotes.reduce((sum, quote) => sum + quote.amount, 0),
         };
       });
@@ -402,7 +407,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       await fetchAdminData();
     } catch (error) {
       console.error("Could not update quote request assignment.", error);
-      alert(error instanceof Error ? error.message : "Could not update the assignment.");
+      alert(error instanceof Error ? error.message : t("Could not update the assignment.", "Impossible de mettre à jour l’attribution."));
     }
   };
 
@@ -416,7 +421,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       await fetchAdminData();
     } catch (error) {
       console.error("Could not update quote request archive status.", error);
-      alert(error instanceof Error ? error.message : "Could not update archive status.");
+      alert(error instanceof Error ? error.message : t("Could not update archive status.", "Impossible de mettre à jour le statut d’archivage."));
     }
   };
 
@@ -455,10 +460,10 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             : typeof message.client === "string" ? message.client : "";
           const clientName = typeof message.client === "object" && message.client
             ? message.client.fullname
-            : users.find((user) => user.id === clientId)?.name || "Client";
+            : users.find((user) => user.id === clientId)?.name || t("Client", "Client");
           const department = message.departement || "general";
           const conversationId = `${clientId}:${department}`;
-          const conversation = conversationsByClientAndDepartment.get(conversationId) || {
+          const conversation: Conversation = conversationsByClientAndDepartment.get(conversationId) || {
             id: conversationId,
             userId: clientId,
             clientName,
@@ -486,7 +491,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         return;
       } catch (error) {
         console.error("Could not load admin conversations.", error);
-        setMessagingError(error instanceof Error ? error.message : "Impossible de charger les conversations.");
+        setMessagingError(error instanceof Error ? error.message : t("Could not load conversations.", "Impossible de charger les conversations."));
         setConversations([]);
         setChatMessages([]);
         return;
@@ -508,7 +513,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
   const handleUploadDocumentForClient = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!selectedDocumentClientId || !documentUploadFile) {
-      setDocumentActionMessage("Choisissez un client et un fichier avant l’envoi.");
+      setDocumentActionMessage(t("Choose a client and a file before sending.", "Choisissez un client et un fichier avant l’envoi."));
       return;
     }
     setIsUploadingDocument(true);
@@ -522,11 +527,11 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       setDocumentUploadFile(null);
       setSelectedDocumentRequestId("");
       if (documentUploadInputRef.current) documentUploadInputRef.current.value = "";
-      setDocumentActionMessage("Document envoyé au client. Une notification lui a été transmise.");
+      setDocumentActionMessage(t("Document sent to the client. A notification has been sent.", "Document envoyé au client. Une notification lui a été transmise."));
       setDocuments(await apiGetDocuments());
     } catch (error) {
       console.error("Could not send document to client.", error);
-      setDocumentActionMessage(error instanceof Error ? error.message : "Échec de l’envoi du document.");
+      setDocumentActionMessage(error instanceof Error ? error.message : t("Document could not be sent.", "Échec de l’envoi du document."));
     } finally {
       setIsUploadingDocument(false);
     }
@@ -537,7 +542,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       await apiDownloadDocument(doc._id, doc.nom_fichier);
     } catch (error) {
       console.error("Could not download shared document.", error);
-      setDocumentActionMessage(error instanceof Error ? error.message : "Échec du téléchargement.");
+      setDocumentActionMessage(error instanceof Error ? error.message : t("Download failed.", "Échec du téléchargement."));
     }
   };
 
@@ -552,7 +557,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
           id: m._id,
           conversationId: conversationId,
           senderId: typeof m.expediteur === "object" && m.expediteur ? m.expediteur._id : typeof m.expediteur === "string" ? m.expediteur : "",
-          senderName: typeof m.expediteur === "object" && m.expediteur ? m.expediteur.fullname : "Utilisateur",
+          senderName: typeof m.expediteur === "object" && m.expediteur ? m.expediteur.fullname : t("User", "Utilisateur"),
           senderRole: (typeof m.expediteur === "object" && m.expediteur ? m.expediteur.role : "client") as "admin" | "client",
           text: m.contenu,
           timestamp: m.createdAt,
@@ -560,7 +565,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         setMessagingError("");
       } catch (error) {
         console.error("Could not load conversation history.", error);
-        setMessagingError(error instanceof Error ? error.message : "Impossible de charger l’historique.");
+        setMessagingError(error instanceof Error ? error.message : t("Could not load conversation history.", "Impossible de charger l’historique."));
       }
       return;
     }
@@ -578,7 +583,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       if (selectedConversation) fetchChatMessages(selectedConversation.id);
     }, 10000);
     return () => clearInterval(interval);
-  }, [selectedConversation, conversations]);
+  }, [selectedConversation, conversations, language]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -638,7 +643,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       fetchMessagingData();
     } catch (err) {
       console.error("Could not send message to client.", err);
-      setMessagingError(err instanceof Error ? err.message : "Échec de l’envoi du message.");
+      setMessagingError(err instanceof Error ? err.message : t("Message could not be sent.", "Échec de l’envoi du message."));
     } finally {
       setIsSendingMessage(false);
     }
@@ -704,7 +709,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
   const handleDeleteLead = async (leadId: string) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this lead? This action cannot be undone.",
+        t("Are you sure you want to delete this lead? This action cannot be undone.", "Voulez-vous vraiment supprimer ce prospect ? Cette action est irréversible."),
       )
     )
       return;
@@ -795,7 +800,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         fetchAdminData();
       } catch (error) {
         console.error("API quote creation failed.", error);
-        alert(error instanceof Error ? error.message : "Could not issue the quote.");
+        alert(error instanceof Error ? error.message : t("Could not issue the quote.", "Impossible d’émettre le devis."));
       } finally {
         setIsIssuingQuote(false);
       }
@@ -865,7 +870,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         currentUser.name,
         `Updated system configurations`,
       );
-      alert("EBI System Configurations saved successfully!");
+      alert(t("EBI system settings saved successfully!", "La configuration du système EBI a été enregistrée."));
       fetchAdminData();
     } catch (err) {
       console.error(err);
@@ -951,20 +956,20 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         <div className="space-y-1">
           <span className="text-[10px] uppercase font-bold text-red-700 bg-red-50 px-2.5 py-0.5 rounded border border-red-100 flex items-center w-fit gap-1.5 animate-pulse">
             <span className="h-1.5 w-1.5 rounded-full bg-red-600"></span>
-            Executive CRM Command Center
+            {t("Executive CRM Command Center", "Centre de commande CRM exécutif")}
           </span>
           <h1 className="font-display text-2xl font-bold text-slate-900">
-            EBI CRM & SLA Dashboard
+            {t("EBI CRM & SLA Dashboard", "Tableau de bord CRM et SLA EBI")}
           </h1>
           <p className="text-xs text-gray-500">
-            Secure admin authorization active: {currentUser.name}
+            {t("Secure admin authorization active:", "Autorisation administrateur sécurisée active :")} {currentUser.name}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => fetchAdminData()}
             className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-500 shadow-sm bg-white cursor-pointer"
-            title="Refresh logs"
+            title={t("Refresh dashboard data", "Actualiser les données du tableau de bord")}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -973,14 +978,14 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             className="rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 bg-white px-3.5 py-2 text-xs font-semibold shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <FileDown className="h-4 w-4" />
-            <span>Export Leads</span>
+            <span>{t("Export Leads", "Exporter les prospects")}</span>
           </button>
           <button
             onClick={() => handleExportCSV("financials")}
             className="rounded-lg bg-blue-900 hover:bg-blue-950 text-white px-3.5 py-2 text-xs font-semibold shadow flex items-center gap-1.5 cursor-pointer"
           >
             <BarChart3 className="h-4 w-4" />
-            <span>Export Analytics</span>
+            <span>{t("Export Analytics", "Exporter les statistiques")}</span>
           </button>
         </div>
       </div>
@@ -989,14 +994,14 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       <div className="border-b border-gray-200">
         <nav className="flex space-x-6 text-xs font-bold tracking-wide uppercase">
           {[
-            { id: "dashboard", label: "CRM Analytics" },
-            { id: "crm", label: "Manage Leads" },
-            { id: "quotes", label: "Quote Proposals" },
-            { id: "documents", label: "Documents" },
-            { id: "appointments", label: "Appointments Board" },
-            { id: "messaging", label: "Messaging" },
-            { id: "settings", label: "System Configs" },
-            { id: "logs", label: "Audits Logs" },
+            { id: "dashboard", label: t("CRM Analytics", "Statistiques CRM") },
+            { id: "crm", label: t("Manage Leads", "Gérer les prospects") },
+            { id: "quotes", label: t("Quote Proposals", "Propositions de devis") },
+            { id: "documents", label: t("Documents", "Documents") },
+            { id: "appointments", label: t("Appointments Board", "Tableau des rendez-vous") },
+            { id: "messaging", label: t("Messaging", "Messagerie") },
+            { id: "settings", label: t("System Configs", "Configuration système") },
+            { id: "logs", label: t("Audit Logs", "Journaux d’audit") },
           ].map((sub) => (
             <button
               key={sub.id}
@@ -1027,57 +1032,57 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-left">
               <span className="block text-[10px] text-gray-400 font-bold uppercase">
-                Prospects
+                {t("Prospects", "Prospects")}
               </span>
               <span className="block text-2.5xl font-extrabold text-slate-900 mt-1">
                 {analytics?.totalProspects || 0}
               </span>
               <span className="block text-[9px] text-gray-500 mt-1">
-                Leads + quote requests, deduplicated when possible
+                {t("Leads + quote requests, deduplicated when possible", "Prospects et demandes de devis, dédupliqués si possible")}
               </span>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-left">
               <span className="block text-[10px] text-gray-400 font-bold uppercase">
-                Quote Proposals
+                {t("Quote Proposals", "Propositions de devis")}
               </span>
               <span className="block text-2.5xl font-extrabold text-slate-900 mt-1">
                 {analytics?.totalQuotes || 0}
               </span>
               <span className="block text-[9px] text-gray-500 mt-1">
-                {analytics?.acceptedQuoteCount || 0} accepted — {analytics?.totalRequests || 0} requests
+                {analytics?.acceptedQuoteCount || 0} {t("accepted", "acceptés")} — {analytics?.totalRequests || 0} {t("requests", "demandes")}
               </span>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-left">
               <span className="block text-[10px] text-gray-400 font-bold uppercase">
-                Quote Conversion
+                {t("Quote Conversion", "Conversion des devis")}
               </span>
               <span className="block text-2.5xl font-extrabold text-slate-900 mt-1">
                 {analytics?.conversionRate || 0}%
               </span>
               <span className="block text-[9px] text-gray-500 mt-1">
-                {analytics?.acceptedQuoteCount || 0} / {analytics?.totalQuotes || 0} accepted quotes
+                {analytics?.acceptedQuoteCount || 0} / {analytics?.totalQuotes || 0} {t("accepted quotes", "devis acceptés")}
               </span>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-left">
               <span className="block text-[10px] text-gray-400 font-bold uppercase">
-                Accepted Revenue
+                {t("Accepted Revenue", "Chiffre d’affaires accepté")}
               </span>
               <span className="block text-2.5xl font-extrabold text-emerald-700 mt-1">
                 €{(analytics?.revenue || 0).toLocaleString()}
               </span>
               <span className="block text-[9px] text-gray-500 mt-1">
-                Contracts signed
+                {t("Contracts signed", "Contrats signés")}
               </span>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-left">
               <span className="block text-[10px] text-gray-400 font-bold uppercase">
-                Pending Estimates
+                {t("Pending Estimates", "Devis en attente")}
               </span>
               <span className="block text-2.5xl font-extrabold text-amber-600 mt-1">
                 {analytics?.pendingQuotes || 0}
               </span>
               <span className="block text-[9px] text-gray-500 mt-1">
-                Awaiting client — €{(analytics?.pendingQuoteAmount || 0).toLocaleString()}
+                {t("Awaiting client", "En attente du client")} — €{(analytics?.pendingQuoteAmount || 0).toLocaleString()}
               </span>
             </div>
           </div>
@@ -1090,12 +1095,11 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
               </span>
               <div>
                 <h3 className="font-display text-sm font-bold text-white">
-                  Appointments Board
+                  {t("Appointments Board", "Tableau des rendez-vous")}
                 </h3>
                 <p className="text-[10px] text-blue-200">
-                  {appointments.length} appointment
-                  {appointments.length === 1 ? "" : "s"} — review pending
-                  requests, confirm schedules, and add SLA comments.
+                  {appointments.length} {t("appointment", "rendez-vous")}
+                  {appointments.length === 1 ? "" : t("s", "")} — {t("review pending requests, confirm schedules, and add SLA comments.", "examinez les demandes en attente, confirmez les horaires et ajoutez des commentaires SLA.")}
                 </p>
               </div>
             </div>
@@ -1104,7 +1108,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
               className="rounded-lg bg-white text-blue-900 px-4 py-2 text-xs font-bold shadow hover:bg-blue-50 transition cursor-pointer flex items-center gap-1.5"
             >
               <CalendarDays className="h-4 w-4" />
-              Open Board
+              {t("Open Board", "Ouvrir le tableau")}
             </button>
           </div>
 
@@ -1114,10 +1118,10 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             <div className="md:col-span-8 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-left space-y-4">
               <div>
                 <h3 className="font-display text-sm font-bold text-slate-900">
-                  Performance Over Time
+                  {t("Performance Over Time", "Évolution des performances")}
                 </h3>
                 <p className="text-[10px] text-gray-400">
-                  Accepted quote revenue over the last six months.
+                  {t("Accepted quote revenue over the last six months.", "Chiffre d’affaires des devis acceptés au cours des six derniers mois.")}
                 </p>
               </div>
               <div className="h-64">
@@ -1148,7 +1152,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                       fillOpacity={1}
                       fill="url(#colorRev)"
                       strokeWidth={2.5}
-                      name="Revenue (€)"
+                      name={t("Revenue (€)", "Chiffre d’affaires (€)")}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -1159,21 +1163,21 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             <div className="md:col-span-4 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-left space-y-4">
               <div>
                 <h3 className="font-display text-sm font-bold text-slate-900">
-                  Requests by Service
+                  {t("Requests by Service", "Demandes par service")}
                 </h3>
                 <p className="text-[10px] text-gray-400">
-                  {analytics?.totalRequests || 0} submitted quote requests grouped by service.
+                  {analytics?.totalRequests || 0} {t("submitted quote requests grouped by service.", "demandes de devis reçues, regroupées par service.")}
                 </p>
                 {!!analytics?.unassignedServiceRequests && (
                   <p className="mt-1 text-[10px] text-amber-700">
-                    {analytics.unassignedServiceRequests} request(s) have no linked service.
+                    {analytics.unassignedServiceRequests} {t("request(s) have no linked service.", "demande(s) sans service associé.")}
                   </p>
                 )}
               </div>
               <div className="h-44 relative flex items-center justify-center">
                 {servicePieData.length === 0 ? (
                   <span className="text-xs text-gray-400">
-                    No service data.
+                    {t("No service data.", "Aucune donnée de service.")}
                   </span>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -1205,10 +1209,10 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                       ></span>
-                      {entry.name}
+                      {entry.name === "Service non précisé" ? t("Unspecified service", "Service non précisé") : entry.name}
                     </span>
                     <span className="font-bold text-slate-950">
-                      {entry.value} requests
+                      {entry.value} {t("requests", "demandes")}
                     </span>
                   </div>
                 ))}
@@ -1226,10 +1230,10 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-100 pb-4 text-left">
             <div>
               <h3 className="font-display text-sm font-bold text-slate-950">
-                Acquired CRM Leads
+                {t("Acquired CRM Leads", "Prospects CRM recueillis")}
               </h3>
               <p className="text-[10px] text-gray-400">
-                Search, filter, and review lead requests classified by AI.
+                {t("Search, filter, and review lead requests classified by AI.", "Recherchez, filtrez et consultez les demandes de prospects classées par l’IA.")}
               </p>
             </div>
 
@@ -1239,7 +1243,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search leads..."
+                  placeholder={t("Search leads...", "Rechercher des prospects...")}
                   value={leadSearch}
                   onChange={(e) => setLeadSearch(e.target.value)}
                   className="rounded-lg border border-gray-200 pl-8 pr-3 py-2 text-xs w-full sm:w-48 focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -1250,21 +1254,21 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                 onChange={(e) => setLeadDeptFilter(e.target.value)}
                 className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs focus:outline-none"
               >
-                <option value="all">All Departments</option>
-                <option value="Development">Development</option>
-                <option value="Recruitment">Recruitment</option>
-                <option value="Outsourcing">Outsourcing</option>
+                <option value="all">{t("All Departments", "Tous les départements")}</option>
+                <option value="Development">{t("Development", "Développement")}</option>
+                <option value="Recruitment">{t("Recruitment", "Recrutement")}</option>
+                <option value="Outsourcing">{t("Outsourcing", "Externalisation")}</option>
               </select>
               <select
                 value={leadStatusFilter}
                 onChange={(e) => setLeadStatusFilter(e.target.value)}
                 className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs focus:outline-none"
               >
-                <option value="all">All Statuses</option>
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="qualified">Qualified</option>
-                <option value="lost">Lost</option>
+                <option value="all">{t("All Statuses", "Tous les statuts")}</option>
+                <option value="new">{t("New", "Nouveau")}</option>
+                <option value="contacted">{t("Contacted", "Contacté")}</option>
+                <option value="qualified">{t("Qualified", "Qualifié")}</option>
+                <option value="lost">{t("Lost", "Perdu")}</option>
               </select>
             </div>
           </div>
@@ -1272,19 +1276,19 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
           {}
           {filteredLeads.length === 0 ? (
             <div className="text-center py-12 text-gray-400 text-xs">
-              No matching leads found.
+              {t("No matching leads found.", "Aucun prospect correspondant.")}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-gray-150 text-gray-400 font-bold uppercase tracking-wide">
-                    <th className="p-3">Client details</th>
-                    <th className="p-3">AI Department</th>
-                    <th className="p-3">AI Priority</th>
-                    <th className="p-3">Lead Status</th>
-                    <th className="p-3">CRM Notes</th>
-                    <th className="p-3 text-right">Actions</th>
+                    <th className="p-3">{t("Client details", "Coordonnées du client")}</th>
+                    <th className="p-3">{t("AI Department", "Département IA")}</th>
+                    <th className="p-3">{t("AI Priority", "Priorité IA")}</th>
+                    <th className="p-3">{t("Lead Status", "Statut du prospect")}</th>
+                    <th className="p-3">{t("CRM Notes", "Notes CRM")}</th>
+                    <th className="p-3 text-right">{t("Actions", "Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1311,7 +1315,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                                 : "bg-purple-50 text-purple-700"
                           }`}
                         >
-                          {lead.suggestedDepartment || "Development"}
+                          {lead.suggestedDepartment || t("Development", "Développement")}
                         </span>
                       </td>
                       <td className="p-3">
@@ -1324,7 +1328,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                                 : "text-gray-400"
                           }`}
                         >
-                          ● {lead.priority || "medium"}
+                          ● {lead.priority === "high" ? t("high", "élevée") : lead.priority === "medium" || !lead.priority ? t("medium", "moyenne") : t("low", "faible")}
                         </span>
                       </td>
                       <td className="p-3">
@@ -1337,10 +1341,10 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                           }
                           className="border border-gray-200 rounded p-1 text-[10px] bg-white font-semibold focus:outline-none"
                         >
-                          <option value="new">New</option>
-                          <option value="contacted">Contacted</option>
-                          <option value="qualified">Qualified</option>
-                          <option value="lost">Lost</option>
+                          <option value="new">{t("New", "Nouveau")}</option>
+                          <option value="contacted">{t("Contacted", "Contacté")}</option>
+                          <option value="qualified">{t("Qualified", "Qualifié")}</option>
+                          <option value="lost">{t("Lost", "Perdu")}</option>
                         </select>
                       </td>
                       <td className="p-3 max-w-xs">
@@ -1358,6 +1362,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                                   notes: leadNoteText,
                                 })
                               }
+                              aria-label={t("Save lead note", "Enregistrer la note du prospect")}
                               className="p-1 bg-green-600 hover:bg-green-700 text-white rounded"
                             >
                               <Save className="h-3 w-3" />
@@ -1366,7 +1371,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         ) : (
                           <div className="space-y-1">
                             <p className="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">
-                              {lead.notes || "No CRM comments yet."}
+                              {lead.notes || t("No CRM comments yet.", "Aucun commentaire CRM pour le moment.")}
                             </p>
                             <button
                               onClick={() => {
@@ -1375,7 +1380,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                               }}
                               className="text-[9px] text-blue-900 font-bold hover:underline"
                             >
-                              Edit Note
+                              {t("Edit Note", "Modifier la note")}
                             </button>
                           </div>
                         )}
@@ -1384,7 +1389,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         <button
                           onClick={() => handleDeleteLead(lead.id)}
                           className="p-1.5 text-gray-400 hover:text-red-600 transition"
-                          title="Delete Lead"
+                          title={t("Delete lead", "Supprimer le prospect")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1407,20 +1412,20 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
           <div className="md:col-span-7 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3">
               <h3 className="font-display text-sm font-bold text-slate-950 text-left">
-                {showArchivedRequests ? "Archived Quote Requests" : "Quote Requests Pipeline"}
+                {showArchivedRequests ? t("Archived Quote Requests", "Demandes de devis archivées") : t("Quote Requests Pipeline", "Suivi des demandes de devis")}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowArchivedRequests((current) => !current)}
                 className="rounded-lg border border-gray-200 px-3 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-50"
               >
-                {showArchivedRequests ? "View active requests" : "View archive"}
+                {showArchivedRequests ? t("View active requests", "Voir les demandes actives") : t("View archive", "Voir les archives")}
               </button>
             </div>
 
             {visibleQuoteRequests.length === 0 ? (
               <div className="text-center py-12 text-gray-400 text-xs">
-                {showArchivedRequests ? "No archived quote requests." : "No quote requests submitted yet."}
+                {showArchivedRequests ? t("No archived quote requests.", "Aucune demande de devis archivée.") : t("No quote requests submitted yet.", "Aucune demande de devis reçue pour le moment.")}
               </div>
             ) : (
               <div className="space-y-4">
@@ -1449,7 +1454,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                                 : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {req.status}
+                        {req.status === "new" ? t("New", "Nouveau") : req.status === "in_review" ? t("In review", "En cours d’examen") : req.status === "quoted" ? t("Quoted", "Devis envoyé") : req.status === "accepted" ? t("Accepted", "Accepté") : t("Rejected", "Refusé")}
                       </span>
                     </div>
 
@@ -1460,13 +1465,13 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                     <div className="grid grid-cols-2 gap-4 text-[10px] text-gray-400">
                       <div>
                         <span className="font-bold text-slate-900">
-                          Budget:
+                          {t("Budget:", "Budget :")}
                         </span>{" "}
                         {req.budget}
                       </div>
                       <div>
                         <span className="font-bold text-slate-900">
-                          Deadline:
+                          {t("Deadline:", "Échéance :")}
                         </span>{" "}
                         {req.deadline}
                       </div>
@@ -1475,13 +1480,13 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                     {localStorage.getItem("ebi_auth_mode") === "api" && (
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                         <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-700">
-                          Assigned manager
+                          {t("Assigned manager", "Responsable attribué")}
                           <select
                             value={req.managerId || ""}
                             onChange={(event) => handleRequestAssignment(req.id, event.target.value)}
                             className="max-w-48 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px]"
                           >
-                            <option value="">Unassigned</option>
+                            <option value="">{t("Unassigned", "Non attribué")}</option>
                             {adminManagers.map((manager) => (
                               <option key={manager._id} value={manager._id}>
                                 {manager.fullname}
@@ -1494,7 +1499,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                           onClick={() => handleRequestArchive(req)}
                           className="rounded-md border border-gray-200 px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"
                         >
-                          {req.archivedAt ? "Restore request" : "Archive request"}
+                          {req.archivedAt ? t("Restore request", "Restaurer la demande") : t("Archive request", "Archiver la demande")}
                         </button>
                       </div>
                     )}
@@ -1505,11 +1510,11 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                           href={req.attachmentUrl}
                           className="text-[10px] font-bold text-blue-900 hover:underline"
                         >
-                          📎 Attached: {req.attachmentName}
+                          📎 {t("Attached:", "Pièce jointe :")} {req.attachmentName}
                         </a>
                       ) : (
                         <span className="text-[9px] text-gray-400">
-                          No attachments.
+                          {t("No attachments.", "Aucune pièce jointe.")}
                         </span>
                       )}
 
@@ -1521,7 +1526,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                           }}
                           className="bg-blue-900 text-white text-[10px] font-bold px-3 py-1.5 rounded hover:bg-blue-950 transition cursor-pointer"
                         >
-                          Generate Formal Quote
+                          {t("Generate Formal Quote", "Générer un devis officiel")}
                         </button>
                       )}
                     </div>
@@ -1534,23 +1539,23 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
           {}
           <div className="md:col-span-5 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left font-semibold">
-              Pricing Generator
+              {t("Pricing Generator", "Générateur de devis")}
             </h3>
 
             {selectedReq ? (
               <form onSubmit={handleIssueQuote} className="space-y-4 text-left">
                 <div className="bg-slate-50 p-3 rounded-lg border border-gray-200 text-xs space-y-1">
                   <div>
-                    <span className="font-bold text-slate-900">Project:</span>{" "}
+                    <span className="font-bold text-slate-900">{t("Project:", "Projet :")}</span>{" "}
                     {selectedReq.projectType}
                   </div>
                   <div>
-                    <span className="font-bold text-slate-900">Client:</span>{" "}
+                    <span className="font-bold text-slate-900">{t("Client:", "Client :")}</span>{" "}
                     {selectedReq.clientName} ({selectedReq.company})
                   </div>
                   <div>
                     <span className="font-bold text-slate-900">
-                      Stated Budget:
+                      {t("Stated Budget:", "Budget indiqué :")}
                     </span>{" "}
                     {selectedReq.budget}
                   </div>
@@ -1558,12 +1563,12 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
 
                 <div>
                   <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">
-                    Quote Pricing Amount (€) *
+                    {t("Quote Pricing Amount (€) *", "Montant du devis (€) *")}
                   </label>
                   <input
                     type="number"
                     required
-                    placeholder="e.g. 15000"
+                    placeholder={t("e.g. 15000", "ex. 15 000")}
                     value={quoteAmount}
                     onChange={(e) => setQuoteAmount(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 p-2.5 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -1572,7 +1577,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
 
                 <div>
                   <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">
-                    SLA Contract & Payment Terms
+                    {t("SLA Contract & Payment Terms", "Contrat SLA et modalités de paiement")}
                   </label>
                   <textarea
                     rows={4}
@@ -1588,21 +1593,20 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                     disabled={isIssuingQuote}
                     className="flex-1 bg-blue-900 hover:bg-blue-950 text-white rounded-lg py-2 text-xs font-semibold shadow disabled:opacity-45"
                   >
-                    {isIssuingQuote ? "Issuing..." : "Issue Formal Quote"}
+                    {isIssuingQuote ? t("Issuing...", "Émission...") : t("Issue Formal Quote", "Émettre le devis officiel")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedReq(null)}
                     className="border border-gray-300 hover:bg-gray-50 text-gray-600 rounded-lg px-3 py-2 text-xs"
                   >
-                    Cancel
+                    {t("Cancel", "Annuler")}
                   </button>
                 </div>
               </form>
             ) : (
               <div className="text-center py-16 text-gray-400 text-xs">
-                Select an active quote request from the left pipeline to load
-                the pricing generator.
+                {t("Select an active quote request from the left pipeline to load the pricing generator.", "Sélectionnez une demande de devis active dans la liste pour ouvrir le générateur de devis.")}
               </div>
             )}
           </div>
@@ -1616,11 +1620,11 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             className="xl:col-span-2 space-y-4 rounded-2xl border border-gray-200 bg-white p-6 text-left shadow-sm"
           >
             <div>
-              <h3 className="font-display text-sm font-bold text-slate-950">Envoyer un document à un client</h3>
-              <p className="mt-1 text-xs text-gray-500">Le fichier sera privé et accessible uniquement au client choisi et à l’administration.</p>
+              <h3 className="font-display text-sm font-bold text-slate-950">{t("Send a document to a client", "Envoyer un document à un client")}</h3>
+              <p className="mt-1 text-xs text-gray-500">{t("The file will be private and accessible only to the selected client and administrators.", "Le fichier sera privé et accessible uniquement au client choisi et à l’administration.")}</p>
             </div>
             <label className="block space-y-1 text-xs font-semibold text-gray-700">
-              Client
+              {t("Client", "Client")}
               <select
                 value={selectedDocumentClientId}
                 onChange={(event) => {
@@ -1630,20 +1634,20 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2"
                 required
               >
-                <option value="">Sélectionner un client</option>
+                <option value="">{t("Select a client", "Sélectionner un client")}</option>
                 {documentClients.map((client) => (
                   <option key={client._id} value={client._id}>{client.fullname} — {client.email}</option>
                 ))}
               </select>
             </label>
             <label className="block space-y-1 text-xs font-semibold text-gray-700">
-              Demande associée (facultatif)
+              {t("Related request (optional)", "Demande associée (facultatif)")}
               <select
                 value={selectedDocumentRequestId}
                 onChange={(event) => setSelectedDocumentRequestId(event.target.value)}
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2"
               >
-                <option value="">Document général</option>
+                <option value="">{t("General document", "Document général")}</option>
                 {quoteRequests.filter((request) => request.userId === selectedDocumentClientId).map((request) => (
                   <option key={request.id} value={request.id}>{request.projectType} — {request.requirements.slice(0, 45)}</option>
                 ))}
@@ -1657,30 +1661,30 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
               className="block w-full text-xs text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-blue-900"
               required
             />
-            <p className="text-[10px] text-gray-400">PDF, Word, Excel, images et fichiers texte — 10 Mo maximum.</p>
+            <p className="text-[10px] text-gray-400">{t("PDF, Word, Excel, images and text files — 10 MB maximum.", "PDF, Word, Excel, images et fichiers texte — 10 Mo maximum.")}</p>
             <button
               type="submit"
               disabled={isUploadingDocument || documentClients.length === 0}
               className="flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2 text-xs font-bold text-white hover:bg-blue-950 disabled:opacity-50"
             >
               <UploadCloud className="h-4 w-4" />
-              {isUploadingDocument ? "Envoi..." : "Envoyer au client"}
+              {isUploadingDocument ? t("Sending...", "Envoi...") : t("Send to client", "Envoyer au client")}
             </button>
             {documentActionMessage && <p role="status" className="text-xs text-blue-900">{documentActionMessage}</p>}
           </form>
 
           <section className="xl:col-span-3 space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="border-b border-gray-100 pb-3 text-left">
-              <h3 className="font-display text-sm font-bold text-slate-950">Documents partagés</h3>
-              <p className="mt-1 text-xs text-gray-500">Historique des documents envoyés et reçus pour les clients.</p>
+              <h3 className="font-display text-sm font-bold text-slate-950">{t("Shared documents", "Documents partagés")}</h3>
+              <p className="mt-1 text-xs text-gray-500">{t("History of documents sent to and received from clients.", "Historique des documents envoyés et reçus pour les clients.")}</p>
             </div>
             {documents.length === 0 ? (
-              <div className="py-10 text-center text-xs text-gray-400">Aucun document partagé pour le moment.</div>
+              <div className="py-10 text-center text-xs text-gray-400">{t("No shared documents yet.", "Aucun document partagé pour le moment.")}</div>
             ) : (
               <div className="space-y-3">
                 {documents.map((doc) => {
-                  const clientName = typeof doc.client === "object" && doc.client ? doc.client.fullname : "Client";
-                  const senderName = typeof doc.uploaded_by === "object" && doc.uploaded_by ? doc.uploaded_by.fullname : "Utilisateur";
+                  const clientName = typeof doc.client === "object" && doc.client ? doc.client.fullname : t("Client", "Client");
+                  const senderName = typeof doc.uploaded_by === "object" && doc.uploaded_by ? doc.uploaded_by.fullname : t("User", "Utilisateur");
                   const requestName = typeof doc.demande === "object" && doc.demande ? doc.demande.besoin : "";
                   return (
                     <div key={doc._id} className="flex items-center justify-between gap-4 rounded-xl border border-gray-150 p-4 text-left">
@@ -1688,7 +1692,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         <FileText className="h-5 w-5 shrink-0 text-blue-900" />
                         <div className="min-w-0">
                           <p className="truncate text-xs font-bold text-slate-900">{doc.nom_fichier}</p>
-                          <p className="text-[10px] text-gray-500">{clientName} · {doc.origine === "admin" ? "Envoyé par EBI" : "Reçu du client"} · {senderName}</p>
+                          <p className="text-[10px] text-gray-500">{clientName} · {doc.origine === "admin" ? t("Sent by EBI", "Envoyé par EBI") : t("Received from client", "Reçu du client")} · {senderName}</p>
                           {requestName && <p className="truncate text-[10px] text-gray-400">{requestName}</p>}
                         </div>
                       </div>
@@ -1696,7 +1700,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         type="button"
                         onClick={() => handleDownloadSharedDocument(doc)}
                         className="shrink-0 rounded-lg border border-gray-200 p-2 text-gray-600 hover:text-blue-900"
-                        title="Télécharger le document"
+                        title={t("Download document", "Télécharger le document")}
                       >
                         <Download className="h-4 w-4" />
                       </button>
@@ -1715,12 +1719,12 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       {adminSubTab === "appointments" && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
           <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left">
-            SLA Appointments CMD Board
+            {t("SLA Appointments CMD Board", "Tableau de commande des rendez-vous SLA")}
           </h3>
 
           {appointments.length === 0 ? (
             <div className="text-center py-12 text-gray-400 text-xs">
-              No meetings booked.
+              {t("No meetings booked.", "Aucun rendez-vous réservé.")}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1735,10 +1739,10 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         {a.title}
                       </span>
                       <span className="block text-[10px] text-gray-500">
-                        Client: {a.clientName} ({a.clientEmail})
+                        {t("Client:", "Client :")} {a.clientName} ({a.clientEmail})
                       </span>
                       <span className="block text-[9px] text-gray-400 mt-1">
-                        {a.date} at {a.timeSlot} ({a.timezone})
+                        {a.date} {t("at", "à")} {a.timeSlot} ({a.timezone})
                       </span>
                     </div>
                     <span
@@ -1752,7 +1756,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                               : "bg-gray-100 text-gray-700"
                       }`}
                     >
-                      {a.status}
+                      {a.status === "pending" ? t("Pending", "En attente") : a.status === "confirmed" ? t("Confirmed", "Confirmé") : a.status === "cancelled" ? t("Cancelled", "Annulé") : t("Completed", "Terminé")}
                     </span>
                   </div>
 
@@ -1760,7 +1764,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="Add scheduling comments..."
+                        placeholder={t("Add scheduling comments...", "Ajouter des commentaires sur la planification...")}
                         value={aptNoteText}
                         onChange={(e) => setAptNoteText(e.target.value)}
                         className="border border-gray-300 rounded p-1 text-[10px] flex-1 focus:outline-none"
@@ -1769,6 +1773,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         onClick={() =>
                           handleUpdateAppointment(a.id, a.status, aptNoteText)
                         }
+                        aria-label={t("Save appointment comments", "Enregistrer les commentaires du rendez-vous")}
                         className="p-1 bg-green-600 hover:bg-green-700 text-white rounded"
                       >
                         <Save className="h-3 w-3" />
@@ -1778,9 +1783,9 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                     <div className="space-y-1">
                       <p className="text-[10px] text-gray-500 bg-slate-50 p-2 rounded">
                         <span className="font-bold text-slate-900 block">
-                          SLA Comments:
+                          {t("SLA Comments:", "Commentaires SLA :")}
                         </span>
-                        {a.adminNotes || "No supervisor comments yet."}
+                        {a.adminNotes || t("No supervisor comments yet.", "Aucun commentaire du responsable pour le moment.")}
                       </p>
                       <button
                         onClick={() => {
@@ -1789,7 +1794,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         }}
                         className="text-[9px] text-blue-900 font-bold hover:underline"
                       >
-                        Edit Comments
+                        {t("Edit Comments", "Modifier les commentaires")}
                       </button>
                     </div>
                   )}
@@ -1802,7 +1807,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         }
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded py-1.5 text-[10px] font-bold cursor-pointer"
                       >
-                        Confirm Slot
+                        {t("Confirm Slot", "Confirmer le créneau")}
                       </button>
                       <button
                         onClick={() =>
@@ -1810,7 +1815,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                         }
                         className="flex-1 bg-white border border-gray-300 text-gray-600 rounded py-1.5 text-[10px] font-bold cursor-pointer hover:bg-gray-50"
                       >
-                        Decline
+                        {t("Decline", "Refuser")}
                       </button>
                     </div>
                   )}
@@ -1827,13 +1832,13 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             {/* Left: Conversation List */}
             <div className="w-80 border-r border-gray-200 flex flex-col">
               <div className="p-4 border-b border-gray-100">
-                <h3 className="font-display text-sm font-bold text-slate-950 text-left">Client Conversations</h3>
-                <span className="text-[10px] text-gray-400">Select a client to view their chat thread</span>
+                <h3 className="font-display text-sm font-bold text-slate-950 text-left">{t("Client Conversations", "Conversations clients")}</h3>
+                <span className="text-[10px] text-gray-400">{t("Select a client to view their chat thread", "Sélectionnez un client pour consulter son fil de discussion")}</span>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {conversations.length === 0 && (
                   <div className={`p-6 text-center text-xs ${messagingError ? "text-red-700" : "text-gray-400"}`}>
-                    {messagingError || "No conversations yet"}
+                    {messagingError || t("No conversations yet", "Aucune conversation pour le moment")}
                   </div>
                 )}
                 {conversations
@@ -1847,7 +1852,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 truncate">{conv.clientName || "Client"}</span>
+                        <span className="text-xs font-bold text-slate-900 truncate">{conv.clientName || t("Client", "Client")}</span>
                         {conv.lastMessageAt && (
                           <span className="text-[9px] text-gray-400 whitespace-nowrap ml-2">
                             {new Date(conv.lastMessageAt).toLocaleDateString()}
@@ -1871,7 +1876,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             <div className="flex-1 flex flex-col">
               {!selectedConversation ? (
                 <div className="flex-1 flex items-center justify-center text-xs text-gray-400">
-                  Select a client conversation to start messaging
+                  {t("Select a client conversation to start messaging", "Sélectionnez une conversation client pour commencer à échanger")}
                 </div>
               ) : (
                 <>
@@ -1881,22 +1886,22 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                       {(selectedConversation.clientName || "C").charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <span className="block text-xs font-bold text-slate-900">{selectedConversation.clientName || "Client"}</span>
-                      <span className="block text-[10px] text-gray-400">Direct Support Channel</span>
+                      <span className="block text-xs font-bold text-slate-900">{selectedConversation.clientName || t("Client", "Client")}</span>
+                      <span className="block text-[10px] text-gray-400">{t("Direct Support Channel", "Canal d’assistance directe")}</span>
                     </div>
                   </div>
 
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
                     {chatMessages.length === 0 && (
-                      <div className="text-center text-[10px] text-gray-400 py-8">No messages yet. Send the first message below.</div>
+                      <div className="text-center text-[10px] text-gray-400 py-8">{t("No messages yet. Send the first message below.", "Aucun message pour le moment. Envoyez le premier message ci-dessous.")}</div>
                     )}
                     {chatMessages.map((m) => (
                       <div key={m.id} className={`flex items-start space-x-2 ${m.senderId === currentUser.id ? "flex-row-reverse space-x-reverse" : ""}`}>
                         <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${
                           m.senderId === currentUser.id ? "bg-blue-600" : "bg-blue-950"
                         }`}>
-                          {m.senderId === currentUser.id ? "Me" : "C"}
+                          {m.senderId === currentUser.id ? t("Me", "Moi") : "C"}
                         </div>
                         <div className={`max-w-[70%] rounded-xl px-3 py-2 text-xs shadow-sm ${
                           m.senderId === currentUser.id
@@ -1906,7 +1911,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                           <span className="block text-[8px] opacity-60 font-semibold mb-0.5">{m.senderName}</span>
                           {m.text}
                           <time className="mt-1 block text-[8px] opacity-60">
-                            {new Date(m.timestamp).toLocaleString("fr-FR")}
+                            {new Date(m.timestamp).toLocaleString(language === "fr" ? "fr-FR" : "en-US")}
                           </time>
                         </div>
                       </div>
@@ -1918,7 +1923,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                   <div className="p-4 border-t border-gray-100 bg-white flex items-center space-x-2">
                     <input
                       type="text"
-                      placeholder="Type a message to this client..."
+                      placeholder={t("Type a message to this client...", "Écrivez un message à ce client...")}
                       maxLength={5000}
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
@@ -1928,6 +1933,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
                     <button
                       onClick={handleSendMessage}
                       disabled={!chatInput.trim() || isSendingMessage}
+                      aria-label={t("Send message", "Envoyer le message")}
                       className="h-8 w-8 rounded-xl bg-blue-900 text-white flex items-center justify-center hover:bg-blue-950 transition disabled:opacity-45 cursor-pointer"
                     >
                       {isSendingMessage ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
@@ -1948,18 +1954,17 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6 text-left">
           <div className="border-b border-gray-100 pb-3">
             <h3 className="font-display text-sm font-bold text-slate-950">
-              EBI Corporate System Tuner
+              {t("EBI Corporate System Tuner", "Configuration du système d’entreprise EBI")}
             </h3>
             <p className="text-[10px] text-gray-400">
-              Tweak landing pages, backend email logs, and AI chatbot prompts
-              dynamically.
+              {t("Dynamically configure landing pages, backend email templates, and AI chatbot prompts.", "Configurez dynamiquement les pages d’accueil, les modèles d’e-mail et les instructions du chatbot IA.")}
             </p>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">
-                Corporate Platform Name
+                {t("Corporate Platform Name", "Nom de la plateforme")}
               </label>
               <input
                 type="text"
@@ -1971,7 +1976,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
 
             <div>
               <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">
-                AI Chatbot System Prompt (Instruction Context)
+                {t("AI Chatbot System Prompt (Instruction Context)", "Instructions système du chatbot IA (contexte)")}
               </label>
               <textarea
                 rows={4}
@@ -1983,7 +1988,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
 
             <div>
               <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">
-                Chatbot Welcome Greeting Message
+                {t("Chatbot Welcome Greeting Message", "Message d’accueil du chatbot")}
               </label>
               <input
                 type="text"
@@ -1996,7 +2001,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">
-                  Email Quote Template Body
+                  {t("Email Quote Template Body", "Corps du modèle d’e-mail de devis")}
                 </label>
                 <textarea
                   rows={4}
@@ -2007,7 +2012,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
               </div>
               <div>
                 <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">
-                  Email Appointment Template Body
+                  {t("Email Appointment Template Body", "Corps du modèle d’e-mail de rendez-vous")}
                 </label>
                 <textarea
                   rows={4}
@@ -2022,7 +2027,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
               onClick={handleSaveSettings}
               className="rounded-lg bg-blue-900 hover:bg-blue-950 text-white px-5 py-2.5 text-xs font-bold shadow transition cursor-pointer"
             >
-              Commit Dynamic Parameters
+              {t("Save Settings", "Enregistrer les paramètres")}
             </button>
           </div>
         </div>
@@ -2034,7 +2039,7 @@ export default function AdminView({ currentUser, token }: AdminViewProps) {
       {adminSubTab === "logs" && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
           <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left">
-            Enterprise Audit Trail Logs
+            {t("Enterprise Audit Trail Logs", "Journaux d’audit de l’entreprise")}
           </h3>
 
           <div className="space-y-3 max-h-96 overflow-y-auto pr-1">

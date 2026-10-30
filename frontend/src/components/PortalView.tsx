@@ -40,6 +40,7 @@ import { apiGetMessagesByClient, apiCreateMessage } from "../api/messages";
 import { apiGetNotificationsByUser, apiMarkNotificationRead, apiMarkAllNotificationsRead } from "../api/notifications";
 import { apiGetMyAppointments, apiGetAvailability, apiCreateAppointment } from "../api/appointments";
 import { apiGetServices, type ApiService } from "../api/services";
+import { useLanguage } from "../LanguageContext";
 
 interface PortalViewProps {
   currentUser: User;
@@ -60,6 +61,7 @@ const DEMO_SERVICES: ApiService[] = [
 ];
 
 export default function PortalView({ currentUser, token, pendingBooking, pendingAppointments, pendingQuotes, pendingChatDept, onBookingOpened }: PortalViewProps) {
+  const { language, t } = useLanguage();
   const [activeSubTab, setActiveSubTab] = useState<
     "dashboard" | "quotes" | "appointments" | "chat" | "documents"
   >("dashboard");
@@ -229,7 +231,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
         setChatFeedback("");
       } catch (error) {
         console.error("Could not load your message history.", error);
-        setChatFeedback(error instanceof Error ? error.message : "Impossible de charger l’historique.");
+        setChatFeedback(error instanceof Error ? error.message : t("Could not load message history.", "Impossible de charger l’historique."));
       }
       return;
     }
@@ -418,11 +420,11 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
   function slotLabel(iso: string): string {
     const d = new Date(iso);
     const h = d.getHours();
-    const t = d.toLocaleTimeString("fr-FR", {
+    const time = d.toLocaleTimeString(language === "fr" ? "fr-FR" : "en-GB", {
       hour: "2-digit",
       minute: "2-digit",
     });
-    return `${t} - ${String(h + 1).padStart(2, "0")}:00`;
+    return `${time} - ${String(h + 1).padStart(2, "0")}:00`;
   }
 
   const FALLBACK_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
@@ -534,7 +536,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
       fetchPortalData();
     } catch (error) {
       console.error("Could not submit quote request.", error);
-      alert(error instanceof Error ? error.message : "Could not submit your quote request.");
+      alert(error instanceof Error ? error.message : t("Could not submit your quote request.", "Impossible d’envoyer votre demande de devis."));
     } finally {
       setIsSubmittingQuoteRequest(false);
     }
@@ -618,7 +620,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
         fetchPortalData();
       } catch (error) {
         console.error("Could not update quote status.", error);
-        alert(error instanceof Error ? error.message : "Could not update the quote status.");
+        alert(error instanceof Error ? error.message : t("Could not update the quote status.", "Impossible de mettre à jour le statut du devis."));
       }
       return;
     }
@@ -658,16 +660,16 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
 
   const handleFile = async (file: File) => {
     if (!file) return;
-    setUploadProgressMsg("Uploading...");
+    setUploadProgressMsg(t("Uploading...", "Envoi en cours..."));
 
     if (localStorage.getItem("ebi_auth_mode") === "api") {
       try {
         await apiUploadDocument(documentRequestId, file);
-        setUploadProgressMsg("Document envoyé avec succès.");
+        setUploadProgressMsg(t("Document uploaded successfully.", "Document envoyé avec succès."));
         await fetchPortalData();
       } catch (error) {
         console.error("Could not upload client document.", error);
-        setUploadProgressMsg(error instanceof Error ? error.message : "Échec de l'envoi du document.");
+        setUploadProgressMsg(error instanceof Error ? error.message : t("Document upload failed.", "Échec de l'envoi du document."));
       }
       return;
     }
@@ -702,11 +704,11 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           `Uploaded document "${file.name}" to Vault`,
         );
 
-        setUploadProgressMsg("Document enregistré dans cet appareil.");
+        setUploadProgressMsg(t("Document saved on this device.", "Document enregistré sur cet appareil."));
         fetchPortalData();
       } catch (err) {
         console.error(err);
-        setUploadProgressMsg("Upload failed.");
+        setUploadProgressMsg(t("Upload failed.", "Échec de l’envoi."));
       }
     };
     reader.readAsDataURL(file);
@@ -798,7 +800,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
       await loadChatForDept(chatDept);
     } catch (err) {
       console.error("Could not send your message.", err);
-      setChatFeedback(err instanceof Error ? err.message : "Échec de l’envoi du message.");
+      setChatFeedback(err instanceof Error ? err.message : t("Message could not be sent.", "Échec de l’envoi du message."));
     } finally {
       setIsSendingChatMessage(false);
     }
@@ -811,7 +813,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
         await fetchPortalData();
       } catch (error) {
         console.error("Could not delete client document.", error);
-        setUploadProgressMsg(error instanceof Error ? error.message : "Échec de la suppression.");
+        setUploadProgressMsg(error instanceof Error ? error.message : t("Could not delete the document.", "Échec de la suppression."));
       }
       return;
     }
@@ -836,7 +838,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
       await apiDownloadDocumentSummaryPDF(id);
     } catch (err) {
       console.error(err);
-      alert("Could not generate the PDF for this file.");
+      alert(t("Could not generate the PDF for this file.", "Impossible de générer le PDF de ce fichier."));
     }
   };
 
@@ -845,7 +847,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
       await apiDownloadDocument(id, filename);
     } catch (error) {
       console.error("Could not download client document.", error);
-      setUploadProgressMsg(error instanceof Error ? error.message : "Échec du téléchargement.");
+      setUploadProgressMsg(error instanceof Error ? error.message : t("Could not download the document.", "Échec du téléchargement."));
     }
   };
 
@@ -854,6 +856,48 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
     aptSlot && aptTimeOptions.some((o) => o.value === aptSlot)
       ? aptSlot
       : aptTimeOptions[0]?.value || "";
+  const displayedServicesError = servicesError === "No services are currently available."
+    ? t("No services are currently available.", "Aucun service n’est disponible pour le moment.")
+    : servicesError === "Services could not be loaded. Please try again later."
+      ? t("Services could not be loaded. Please try again later.", "Impossible de charger les services. Veuillez réessayer plus tard.")
+      : servicesError;
+
+  const quoteStatusLabel = (status: Quote["status"]) => {
+    switch (status) {
+      case "sent": return t("Sent", "Envoyé");
+      case "accepted": return t("Accepted", "Accepté");
+      case "rejected": return t("Rejected", "Refusé");
+      default: return status;
+    }
+  };
+  const requestStatusLabel = (status: QuoteRequest["status"]) => {
+    switch (status) {
+      case "new": return t("New", "Nouveau");
+      case "in_review": return t("In review", "En cours d’examen");
+      case "quoted": return t("Quoted", "Devis envoyé");
+      case "accepted": return t("Accepted", "Accepté");
+      case "rejected": return t("Rejected", "Refusé");
+      default: return status;
+    }
+  };
+  const appointmentStatusLabel = (status: Appointment["status"]) => {
+    switch (status) {
+      case "confirmed": return t("Confirmed", "Confirmé");
+      case "pending": return t("Pending", "En attente");
+      case "cancelled": return t("Cancelled", "Annulé");
+      default: return status;
+    }
+  };
+  const displayServiceName = (service: ApiService) => {
+    switch (service.code) {
+      case "demo-web-saas": return t("Web SaaS Application", "Application SaaS web");
+      case "demo-erp": return t("Custom ERP system", "Système ERP personnalisé");
+      case "demo-recruitment": return t("IT Screening & Recruitment", "Sélection et recrutement informatique");
+      case "demo-call-center": return t("Bilingual Call Center Outsource", "Externalisation de centre d’appels bilingue");
+      case "demo-back-office": return t("Back-office Admin Support", "Assistance administrative de back-office");
+      default: return service.nom;
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
@@ -861,14 +905,16 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="space-y-1">
           <span className="text-[10px] uppercase font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded">
-            Active Client Portal
+            {t("Active Client Portal", "Portail client actif")}
           </span>
           <h1 className="font-display text-2xl font-bold text-slate-900">
-            Welcome, {currentUser.name}
+            {t("Welcome", "Bienvenue")}, {currentUser.name}
           </h1>
           <p className="text-xs text-gray-500">
-            Track and manage your EBI Custom software, HR, and outsourcing
-            requests directly.
+            {t(
+              "Track and manage your EBI Custom software, HR, and outsourcing requests directly.",
+              "Suivez et gérez directement vos demandes de logiciels, de ressources humaines et d’externalisation auprès d’EBI Custom.",
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -877,14 +923,14 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
             className="rounded-lg bg-blue-900 hover:bg-blue-950 text-white px-3.5 py-2 text-xs font-semibold shadow flex items-center gap-1.5 cursor-pointer"
           >
             <PlusCircle className="h-4 w-4" />
-            <span>Request Quote</span>
+            <span>{t("Request Quote", "Demander un devis")}</span>
           </button>
           <button
             onClick={() => setIsBooking(true)}
             className="rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 bg-white px-3.5 py-2 text-xs font-semibold shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <CalendarDays className="h-4 w-4" />
-            <span>Book Consultation</span>
+            <span>{t("Book Consultation", "Réserver une consultation")}</span>
           </button>
         </div>
       </div>
@@ -893,11 +939,11 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
       <div className="border-b border-gray-200">
         <nav className="flex space-x-6 text-xs font-bold tracking-wide uppercase">
           {[
-            { id: "dashboard", label: "Overview" },
-            { id: "quotes", label: "Quotations & Requests" },
-            { id: "appointments", label: "Appointments History" },
-            { id: "chat", label: "Manager Chat" },
-            { id: "documents", label: "Secure Vault" },
+            { id: "dashboard", label: t("Overview", "Vue d’ensemble") },
+            { id: "quotes", label: t("Quotations & Requests", "Devis et demandes") },
+            { id: "appointments", label: t("Appointments History", "Historique des rendez-vous") },
+            { id: "chat", label: t("Manager Chat", "Messagerie avec un responsable") },
+            { id: "documents", label: t("Secure Vault", "Espace sécurisé") },
           ].map((sub) => (
             <button
               key={sub.id}
@@ -923,29 +969,29 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-1 text-left">
               <span className="text-gray-400 text-[10px] uppercase font-bold">
-                Total Request Pipelines
+                {t("Total Request Pipelines", "Total des demandes")}
               </span>
               <span className="block text-2xl font-extrabold text-blue-950">
                 {quoteRequests.length}
               </span>
               <span className="text-[10px] text-gray-500 font-medium">
-                CRM registered requirements
+                {t("CRM registered requirements", "Demandes enregistrées dans le CRM")}
               </span>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-1 text-left">
               <span className="text-gray-400 text-[10px] uppercase font-bold">
-                Issued Quotations
+                {t("Issued Quotations", "Devis émis")}
               </span>
               <span className="block text-2xl font-extrabold text-blue-950">
                 {quotes.length}
               </span>
               <span className="text-[10px] text-gray-500 font-medium">
-                Ready for review
+                {t("Ready for review", "Prêts à être examinés")}
               </span>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-1 text-left">
               <span className="text-gray-400 text-[10px] uppercase font-bold">
-                Scheduled Meetings
+                {t("Scheduled Meetings", "Réunions planifiées")}
               </span>
               <span className="block text-2xl font-extrabold text-blue-950">
                 {
@@ -955,7 +1001,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                 }
               </span>
               <span className="text-[10px] text-gray-500 font-medium">
-                Consultations logs
+                {t("Consultation logs", "Historique des consultations")}
               </span>
             </div>
           </div>
@@ -965,19 +1011,19 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
             <div className="md:col-span-7 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                 <h3 className="font-display text-sm font-bold text-slate-950">
-                  My Formal Quotations
+                  {t("My Formal Quotations", "Mes devis officiels")}
                 </h3>
                 <button
                   onClick={() => setActiveSubTab("quotes")}
                   className="text-xs text-blue-900 hover:underline"
                 >
-                  View all
+                  {t("View all", "Tout afficher")}
                 </button>
               </div>
 
               {quotes.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-xs">
-                  No quotes generated yet. Submit a project request to begin.
+                  {t("No quotes generated yet. Submit a project request to begin.", "Aucun devis n’a encore été généré. Envoyez une demande de projet pour commencer.")}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -989,7 +1035,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-[10px] font-bold text-gray-400">
-                            REFERENCE: Q-{q.id.slice(-6).toUpperCase()}
+                            {t("REFERENCE", "RÉFÉRENCE")}: Q-{q.id.slice(-6).toUpperCase()}
                           </span>
                           <span className="block text-xs font-bold text-slate-900">
                             {q.projectName}
@@ -1004,7 +1050,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                       </p>
                       <div className="flex items-center justify-between pt-1">
                         <span className="text-[10px] text-gray-400">
-                          Expires: {q.expiryDate}
+                          {t("Expires", "Expire le")} : {q.expiryDate}
                         </span>
 
                         {q.status === "sent" ? (
@@ -1015,7 +1061,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                               }
                               className="rounded bg-blue-900 text-white text-[10px] font-bold px-2.5 py-1 hover:bg-blue-950 transition cursor-pointer"
                             >
-                              Accept
+                              {t("Accept", "Accepter")}
                             </button>
                             <button
                               onClick={() =>
@@ -1023,7 +1069,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                               }
                               className="rounded border border-gray-300 text-gray-600 text-[10px] font-bold px-2.5 py-1 hover:bg-gray-50 transition cursor-pointer"
                             >
-                              Reject
+                              {t("Reject", "Refuser")}
                             </button>
                           </div>
                         ) : (
@@ -1034,7 +1080,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                                 : "bg-red-100 text-red-700"
                             }`}
                           >
-                            {q.status}
+                            {quoteStatusLabel(q.status)}
                           </span>
                         )}
                       </div>
@@ -1047,12 +1093,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
             {}
             <div className="md:col-span-5 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
               <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left">
-                Portal Notifications
+                {t("Portal Notifications", "Notifications du portail")}
               </h3>
 
               {notifications.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-xs">
-                  No active logs or notices.
+                  {t("No active logs or notices.", "Aucune notification pour le moment.")}
                 </div>
               ) : (
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
@@ -1084,7 +1130,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                             }}
                             className="text-[9px] font-semibold text-blue-900 hover:underline"
                           >
-                            Mark Read
+                            {t("Mark Read", "Marquer comme lu")}
                           </button>
                         )}
                       </div>
@@ -1111,13 +1157,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           {}
           <div className="md:col-span-7 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left">
-              My Scoping Requests
+              {t("My Scoping Requests", "Mes demandes de cadrage")}
             </h3>
 
             {quoteRequests.length === 0 ? (
               <div className="text-center py-12 text-gray-400 text-xs">
-                No active scoping requests. Click "Request Quote" above to build
-                a project requirement profile!
+                {t('No active scoping requests. Click "Request Quote" above to build a project requirement profile!', 'Aucune demande de cadrage pour le moment. Cliquez sur « Demander un devis » ci-dessus pour décrire votre projet !')}
               </div>
             ) : (
               <div className="space-y-4">
@@ -1141,7 +1186,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                                 : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {req.status}
+                        {requestStatusLabel(req.status)}
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 leading-relaxed">
@@ -1149,11 +1194,11 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                     </p>
                     <div className="grid grid-cols-2 gap-4 text-[10px] text-gray-400 bg-slate-50 p-2 rounded">
                       <div>
-                        <span className="font-bold">Budget Choice:</span>{" "}
+                        <span className="font-bold">{t("Budget Choice:", "Budget choisi :")}</span>{" "}
                         {req.budget}
                       </div>
                       <div>
-                        <span className="font-bold">Deadline Choice:</span>{" "}
+                        <span className="font-bold">{t("Deadline Choice:", "Échéance choisie :")}</span>{" "}
                         {req.deadline}
                       </div>
                     </div>
@@ -1174,13 +1219,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           {}
           <div className="md:col-span-5 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left">
-              Issued Proposals
+              {t("Issued Proposals", "Offres émises")}
             </h3>
 
             {quotes.length === 0 ? (
               <div className="text-center py-12 text-gray-400 text-xs">
-                Once managers issue your formal proposal, it will display here
-                with printable SLA parameters.
+                {t("Once managers issue your formal proposal, it will display here with printable SLA parameters.", "Dès que nos responsables auront émis votre offre officielle, elle apparaîtra ici avec les conditions de niveau de service à imprimer.")}
               </div>
             ) : (
               <div className="space-y-4">
@@ -1192,7 +1236,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                     <div className="flex justify-between items-start">
                       <div>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                          Formal Quote
+                          {t("Formal Quote", "Devis officiel")}
                         </span>
                         <h4 className="text-xs font-bold text-slate-900">
                           {q.projectName}
@@ -1202,11 +1246,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                         onClick={() => {
                           apiDownloadQuotePDF(q.id).catch((err) => {
                             console.error(err);
-                            alert("Could not download the quote PDF.");
+                            alert(t("Could not download the quote PDF.", "Impossible de télécharger le PDF du devis."));
                           });
                         }}
                         className="p-1.5 bg-white border border-gray-200 rounded text-gray-500 hover:text-blue-900 shadow-sm transition"
-                        title="Download Quote PDF"
+                        title={t("Download Quote PDF", "Télécharger le PDF du devis")}
+                        aria-label={t("Download Quote PDF", "Télécharger le PDF du devis")}
                       >
                         <FileDown className="h-4 w-4" />
                       </button>
@@ -1214,11 +1259,11 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
 
                     <div className="border-t border-dashed border-gray-200 pt-2 text-[11px] space-y-1 text-gray-600">
                       <div>
-                        <span className="font-bold">Proposed Budget:</span> €
+                        <span className="font-bold">{t("Proposed Budget:", "Budget proposé :")}</span> €
                         {q.amount.toLocaleString()}
                       </div>
                       <div>
-                        <span className="font-semibold">Expiry Date:</span>{" "}
+                        <span className="font-semibold">{t("Expiry Date:", "Date d’expiration :")}</span>{" "}
                         {q.expiryDate}
                       </div>
                       <div className="text-[10px] text-gray-500 leading-relaxed italic mt-2">
@@ -1233,18 +1278,18 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                             onClick={() => handleQuoteAction(q.id, "accepted")}
                             className="flex-1 bg-blue-900 text-white text-[10px] font-bold py-2 rounded shadow-sm hover:bg-blue-950 transition cursor-pointer"
                           >
-                            Accept & Sign SLA
+                            {t("Accept & Sign SLA", "Accepter et signer le SLA")}
                           </button>
                           <button
                             onClick={() => handleQuoteAction(q.id, "rejected")}
                             className="flex-1 bg-white border border-gray-300 text-gray-600 text-[10px] font-bold py-2 rounded shadow-sm hover:bg-gray-50 transition cursor-pointer"
                           >
-                            Reject Quote
+                            {t("Reject Quote", "Refuser le devis")}
                           </button>
                         </>
                       ) : (
                         <div className="w-full text-center py-1 border rounded text-[10px] uppercase font-bold tracking-wider">
-                          Quote Status:{" "}
+                          {t("Quote Status:", "Statut du devis :")}{" "}
                           <span
                             className={
                               q.status === "accepted"
@@ -1252,7 +1297,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                                 : "text-red-700"
                             }
                           >
-                            {q.status}
+                            {quoteStatusLabel(q.status)}
                           </span>
                         </div>
                       )}
@@ -1275,10 +1320,10 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 text-left">
               <div>
                 <h3 className="font-display text-sm font-bold text-slate-950">
-                  Available Slots
+                  {t("Available Slots", "Créneaux disponibles")}
                 </h3>
                 <span className="text-[10px] text-gray-400">
-                  Pick a date and time slot to book your consultation.
+                  {t("Pick a date and time slot to book your consultation.", "Choisissez une date et un créneau pour réserver votre consultation.")}
                 </span>
               </div>
               <button
@@ -1290,14 +1335,13 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                 className="rounded-lg bg-blue-900 hover:bg-blue-950 text-white px-3.5 py-2 text-xs font-semibold shadow flex items-center gap-1.5 cursor-pointer"
               >
                 <CalendarDays className="h-4 w-4" />
-                <span>Book Consultation</span>
+                <span>{t("Book Consultation", "Réserver une consultation")}</span>
               </button>
             </div>
 
             {availableSlots.length === 0 ? (
               <div className="text-center py-8 text-gray-400 text-xs">
-                No available slots right now. Please come back later or contact
-                our team directly.
+                {t("No available slots right now. Please come back later or contact our team directly.", "Aucun créneau n’est disponible pour le moment. Revenez plus tard ou contactez directement notre équipe.")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -1309,7 +1353,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                     <div className="min-w-[150px]">
                       <span className="block text-xs font-bold text-slate-900">
                         {new Date(`${group.date}T12:00:00`).toLocaleDateString(
-                          "en-GB",
+                          language === "fr" ? "fr-FR" : "en-GB",
                           { weekday: "long", day: "numeric", month: "long" },
                         )}
                       </span>
@@ -1341,13 +1385,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           {}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left">
-              Appointments History
+              {t("Appointments History", "Historique des rendez-vous")}
             </h3>
 
             {appointments.length === 0 ? (
               <div className="text-center py-12 text-gray-400 text-xs">
-                No meetings scheduled yet. Pick an available slot above to book
-                your first consultation!
+                {t("No meetings scheduled yet. Pick an available slot above to book your first consultation!", "Aucun rendez-vous n’est planifié. Choisissez un créneau ci-dessus pour réserver votre première consultation !")}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1362,7 +1405,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                           {a.title}
                         </span>
                         <span className="block text-[10px] text-gray-500">
-                          {a.date} at {a.timeSlot} ({a.timezone})
+                          {a.date} {t("at", "à")} {a.timeSlot} ({a.timezone})
                         </span>
                       </div>
                       <span
@@ -1376,13 +1419,13 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                                 : "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        {a.status}
+                        {appointmentStatusLabel(a.status)}
                       </span>
                     </div>
                     {a.adminNotes && (
                       <p className="text-[10px] text-gray-500 leading-relaxed bg-slate-50 p-2 rounded">
                         <span className="font-bold text-slate-900 block">
-                          Manager Notes:
+                          {t("Manager Notes:", "Notes du responsable :")}
                         </span>
                         {a.adminNotes}
                       </p>
@@ -1405,7 +1448,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                         }}
                         className="text-[10px] text-red-600 font-bold hover:underline"
                       >
-                        Cancel Appointment
+                        {t("Cancel Appointment", "Annuler le rendez-vous")}
                       </button>
                     )}
                   </div>
@@ -1423,18 +1466,17 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4 max-w-2xl mx-auto">
           <div className="border-b border-gray-100 pb-3 text-left">
             <h3 className="font-display text-sm font-bold text-slate-950">
-              Manager Direct Support Line
+              {t("Manager Direct Support Line", "Ligne directe d’assistance")}
             </h3>
             <span className="text-[10px] text-gray-400">
-              Directly converse with EBI Services department heads. Fully
-              secured.
+              {t("Directly converse with EBI Services department heads. Fully secured.", "Échangez directement avec les responsables des services d’EBI. Conversation entièrement sécurisée.")}
             </span>
           </div>
 
           {}
           <div>
             <span className="block text-[9px] font-bold uppercase text-gray-400 mb-2 text-left">
-              Select a department representative
+              {t("Select a department representative", "Choisissez un représentant de service")}
             </span>
             <div className="flex flex-wrap gap-2">
               <button
@@ -1502,7 +1544,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           <div className="h-72 overflow-y-auto bg-slate-50 border border-gray-150 rounded-xl p-4 space-y-4">
             {messages.length === 0 && (
               <div className="text-center text-[10px] text-gray-400 py-8">
-                Start the conversation with your representative below.
+                {t("Start the conversation with your representative below.", "Commencez la conversation avec votre représentant ci-dessous.")}
               </div>
             )}
             {messages.map((m) => (
@@ -1521,7 +1563,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                       : "bg-blue-950"
                   }`}
                 >
-                  {m.senderId === currentUser.id ? "Me" : "R"}
+                  {m.senderId === currentUser.id ? t("Me", "Moi") : "R"}
                 </div>
                 <div
                   className={`max-w-[70%] rounded-xl px-3 py-2 text-xs shadow-sm ${
@@ -1546,7 +1588,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           <div className="flex items-center space-x-2">
             <input
               type="text"
-              placeholder="Send message to our staff..."
+              placeholder={t("Send message to our staff...", "Envoyer un message à notre équipe...")}
               maxLength={5000}
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
@@ -1556,6 +1598,8 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
             <button
               onClick={handleSendChatMessage}
               disabled={!chatMessage.trim() || isSendingChatMessage}
+              title={t("Send message", "Envoyer le message")}
+              aria-label={t("Send message", "Envoyer le message")}
               className="h-8 w-8 rounded-xl bg-blue-900 text-white flex items-center justify-center hover:bg-blue-950 transition disabled:opacity-45 cursor-pointer"
             >
               {isSendingChatMessage ? <Clock className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
@@ -1585,20 +1629,20 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
             <div className="flex flex-col items-center space-y-2">
               <UploadCloud className="h-10 w-10 text-gray-400" />
               <span className="font-display text-xs font-bold text-slate-900">
-                Drag and Drop scoping draft / RFP documentation
+                {t("Drag and Drop scoping draft / RFP documentation", "Glissez-déposez un brouillon de cadrage ou un dossier de consultation")}
               </span>
               <span className="text-[10px] text-gray-400">
-                PDF, Word, Excel, Images (max 10MB)
+                {t("PDF, Word, Excel, Images (max 10MB)", "PDF, Word, Excel, images (10 Mo maximum)")}
               </span>
               {localStorage.getItem("ebi_auth_mode") === "api" && quoteRequests.length > 0 && (
                 <label className="mt-2 flex flex-col items-start gap-1 text-[10px] font-semibold text-gray-600">
-                  Associer à une demande (facultatif)
+                  {t("Associate with a request (optional)", "Associer à une demande (facultatif)")}
                   <select
                     value={documentRequestId}
                     onChange={(e) => setDocumentRequestId(e.target.value)}
                     className="min-w-64 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs"
                   >
-                    <option value="">Document général</option>
+                    <option value="">{t("General document", "Document général")}</option>
                     {quoteRequests.map((request) => (
                       <option key={request.id} value={request.id}>
                         {request.projectType} — {request.requirements.slice(0, 45)}
@@ -1623,7 +1667,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                   }
                   className="mt-2 text-xs font-bold bg-blue-900 hover:bg-blue-950 text-white px-3.5 py-1.5 rounded-lg shadow cursor-pointer"
                 >
-                  Browse Files manually
+                  {t("Browse Files manually", "Parcourir les fichiers")}
                 </button>
               </div>
 
@@ -1638,13 +1682,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           {}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <h3 className="font-display text-sm font-bold text-slate-950 border-b border-gray-100 pb-3 text-left">
-              Document Vault logs
+              {t("Document Vault logs", "Documents de l’espace sécurisé")}
             </h3>
 
             {documents.length === 0 ? (
               <div className="text-center py-8 text-gray-400 text-xs">
-                Vault is empty. Upload your contracts, mock receipts, or
-                specifications.
+                {t("Vault is empty. Upload your contracts, mock receipts, or specifications.", "Votre espace sécurisé est vide. Téléversez vos contrats, exemples de reçus ou cahiers des charges.")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -1662,8 +1705,8 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                           {doc.name}
                         </span>
                         <span className="block text-[9px] text-gray-400">
-                          {doc.size} • {new Date(doc.createdAt).toLocaleDateString()}
-                          {doc.origin && ` • ${doc.origin === "admin" ? "Envoyé par EBI Services" : "Envoyé par vous"}`}
+                          {doc.size} • {new Date(doc.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : "en-GB")}
+                          {doc.origin && ` • ${doc.origin === "admin" ? t("Sent by EBI Services", "Envoyé par EBI Services") : t("Sent by you", "Envoyé par vous")}`}
                         </span>
                         {doc.requestName && <span className="block text-[9px] text-gray-500">{doc.requestName}</span>}
                       </div>
@@ -1672,21 +1715,24 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                       <button
                         onClick={() => handleDownloadDocumentPDF(doc.id)}
                         className="p-1.5 bg-gray-50 border border-gray-200 hover:text-blue-900 rounded shadow-sm text-gray-500 transition"
-                        title="Download PDF summary"
+                        title={t("Download PDF summary", "Télécharger le résumé PDF")}
+                        aria-label={t("Download PDF summary", "Télécharger le résumé PDF")}
                       >
                         <FileDown className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDownloadDocument(doc.id, doc.name)}
                         className="p-1.5 bg-gray-50 border border-gray-200 hover:text-blue-900 rounded shadow-sm text-gray-500 transition"
-                        title="Télécharger le document"
+                        title={t("Download document", "Télécharger le document")}
+                        aria-label={t("Download document", "Télécharger le document")}
                       >
                         <Download className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteDocument(doc.id)}
                         className="p-1.5 bg-gray-50 border border-gray-200 hover:text-red-600 rounded shadow-sm text-gray-500 transition"
-                        title="Delete file"
+                        title={t("Delete file", "Supprimer le fichier")}
+                        aria-label={t("Delete file", "Supprimer le fichier")}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -1705,10 +1751,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl space-y-4 text-left">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h2 className="font-display text-base font-bold text-slate-900">
-                Request Custom Quote
+                {t("Request Custom Quote", "Demander un devis personnalisé")}
               </h2>
               <button
                 onClick={() => setIsRequestingQuote(false)}
+                title={t("Close", "Fermer")}
+                aria-label={t("Close", "Fermer")}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <XCircle className="h-5 w-5" />
@@ -1719,23 +1767,23 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                    Company Industry
+                    {t("Company Industry", "Secteur d’activité")}
                   </label>
                   <select
                     value={quoteIndustry}
                     onChange={(e) => setQuoteIndustry(e.target.value)}
                     className="w-full rounded border border-gray-200 bg-white p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
                   >
-                    <option>Retail & E-commerce</option>
-                    <option>Fintech & Banking</option>
-                    <option>Logistics & Transport</option>
-                    <option>Healthcare & Pharma</option>
-                    <option>SaaS & Tech Startup</option>
+                    <option value="Retail & E-commerce">{t("Retail & E-commerce", "Commerce de détail et e-commerce")}</option>
+                    <option value="Fintech & Banking">{t("Fintech & Banking", "Fintech et banque")}</option>
+                    <option value="Logistics & Transport">{t("Logistics & Transport", "Logistique et transport")}</option>
+                    <option value="Healthcare & Pharma">{t("Healthcare & Pharma", "Santé et industrie pharmaceutique")}</option>
+                    <option value="SaaS & Tech Startup">{t("SaaS & Tech Startup", "SaaS et startup technologique")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                    Project Category choice
+                    {t("Project Category choice", "Catégorie de projet")}
                   </label>
                   <select
                     value={quoteType}
@@ -1744,18 +1792,18 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                     required
                   >
                     <option value="" disabled>
-                      {isLoadingServices ? "Loading services..." : servicesError || "Select a service"}
+                      {isLoadingServices ? t("Loading services...", "Chargement des services...") : displayedServicesError || t("Select a service", "Sélectionnez un service")}
                     </option>
                     {availableServices.map((service) => (
                       <option key={service.code} value={service.code}>
-                        {service.nom}
+                        {displayServiceName(service)}
                       </option>
                     ))}
                   </select>
                 </div>
                 {servicesError && (
                   <span className="col-span-2 block text-[10px] text-red-700" role="alert">
-                    {servicesError}
+                    {displayedServicesError}
                   </span>
                 )}
               </div>
@@ -1763,45 +1811,45 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                    Budget Allocation
+                    {t("Budget Allocation", "Budget")}
                   </label>
                   <select
                     value={quoteBudget}
                     onChange={(e) => setQuoteBudget(e.target.value)}
                     className="w-full rounded border border-gray-200 bg-white p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
                   >
-                    <option>€5,000 - €10,000</option>
-                    <option>€10,000 - €25,000</option>
-                    <option>€25,000 - €50,000</option>
-                    <option>€50,000 - €100,000</option>
-                    <option>€100,000+</option>
+                    <option value="€5,000 - €10,000">{t("€5,000 - €10,000", "5 000 € - 10 000 €")}</option>
+                    <option value="€10,000 - €25,000">{t("€10,000 - €25,000", "10 000 € - 25 000 €")}</option>
+                    <option value="€25,000 - €50,000">{t("€25,000 - €50,000", "25 000 € - 50 000 €")}</option>
+                    <option value="€50,000 - €100,000">{t("€50,000 - €100,000", "50 000 € - 100 000 €")}</option>
+                    <option value="€100,000+">{t("€100,000+", "100 000 € et plus")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                    Delivery Deadline
+                    {t("Delivery Deadline", "Délai de livraison")}
                   </label>
                   <select
                     value={quoteDeadline}
                     onChange={(e) => setQuoteDeadline(e.target.value)}
                     className="w-full rounded border border-gray-200 bg-white p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
                   >
-                    <option>1 Month (Urgent)</option>
-                    <option>3 Months</option>
-                    <option>6 Months</option>
-                    <option>Flexible timeline</option>
+                    <option value="1 Month (Urgent)">{t("1 Month (Urgent)", "1 mois (urgent)")}</option>
+                    <option value="3 Months">{t("3 Months", "3 mois")}</option>
+                    <option value="6 Months">{t("6 Months", "6 mois")}</option>
+                    <option value="Flexible timeline">{t("Flexible timeline", "Délai flexible")}</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                  Requirements Spec mark *
+                  {t("Requirements Spec mark *", "Description des besoins *")}
                 </label>
                 <textarea
                   required
                   rows={4}
-                  placeholder="Describe your technical parameters, stack selection, features checklist, or daily operations seats needs..."
+                  placeholder={t("Describe your technical parameters, stack selection, features checklist, or daily operations seats needs...", "Décrivez vos paramètres techniques, technologies souhaitées, fonctionnalités ou besoins en postes opérationnels...")}
                   value={quoteRequirements}
                   onChange={(e) => setQuoteRequirements(e.target.value)}
                   className="w-full rounded border border-gray-200 p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -1811,7 +1859,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
               {}
               <div>
                 <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                  Upload Scoping RFP (Optional)
+                  {t("Upload Scoping RFP (Optional)", "Joindre un dossier de consultation (facultatif)")}
                 </label>
                 <input
                   type="file"
@@ -1820,7 +1868,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                 />
                 {uploadedFile && (
                   <span className="block mt-1 text-[10px] text-green-700 font-semibold">
-                    ✓ Attached: {uploadedFile.name}
+                    ✓ {t("Attached:", "Fichier joint :")} {uploadedFile.name}
                   </span>
                 )}
               </div>
@@ -1831,14 +1879,14 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                   disabled={isSubmittingQuoteRequest || isLoadingServices || !quoteType || !!servicesError}
                   className="flex-1 bg-blue-900 hover:bg-blue-950 text-white rounded-lg py-2.5 text-xs font-semibold shadow transition cursor-pointer"
                 >
-                  {isSubmittingQuoteRequest ? "Submitting..." : "Submit Quote Request"}
+                  {isSubmittingQuoteRequest ? t("Submitting...", "Envoi en cours...") : t("Submit Quote Request", "Envoyer la demande de devis")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsRequestingQuote(false)}
                   className="border border-gray-300 hover:bg-gray-50 text-gray-600 rounded-lg px-4 py-2.5 text-xs transition cursor-pointer"
                 >
-                  Cancel
+                  {t("Cancel", "Annuler")}
                 </button>
               </div>
             </form>
@@ -1852,10 +1900,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
           <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl space-y-4 text-left">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h2 className="font-display text-base font-bold text-slate-900">
-                Book SLA Consultation
+                {t("Book SLA Consultation", "Réserver une consultation SLA")}
               </h2>
               <button
                 onClick={() => setIsBooking(false)}
+                title={t("Close", "Fermer")}
+                aria-label={t("Close", "Fermer")}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <XCircle className="h-5 w-5" />
@@ -1865,12 +1915,12 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
             <form onSubmit={handleAppointmentBooking} className="space-y-3">
               <div>
                 <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                  Meeting Objective *
+                  {t("Meeting Objective *", "Objet de la réunion *")}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Kickoff ERP integration & pricing review"
+                  placeholder={t("e.g. Kickoff ERP integration & pricing review", "Ex. : lancement de l’intégration ERP et revue tarifaire")}
                   value={aptTitle}
                   onChange={(e) => setAptTitle(e.target.value)}
                   className="w-full rounded border border-gray-200 p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -1879,7 +1929,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
 
               <div>
                 <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                  Schedule Date *
+                  {t("Schedule Date *", "Date souhaitée *")}
                 </label>
                 <input
                   type="date"
@@ -1893,7 +1943,7 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
 
               <div>
                 <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                  Time Slot selection
+                  {t("Time Slot selection", "Choix du créneau horaire")}
                 </label>
                 {aptDate ? (
                   <select
@@ -1909,24 +1959,24 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                   </select>
                 ) : (
                   <span className="block text-[10px] text-gray-400 border border-dashed border-gray-200 rounded p-2">
-                    Select a date above to see the available time slots.
+                    {t("Select a date above to see the available time slots.", "Sélectionnez une date ci-dessus pour voir les créneaux disponibles.")}
                   </span>
                 )}
               </div>
 
               <div>
                 <label className="block text-[9px] font-bold uppercase text-gray-500 mb-1">
-                  Timezone support
+                  {t("Timezone support", "Fuseau horaire")}
                 </label>
                 <select
                   value={aptTimezone}
                   onChange={(e) => setAptTimezone(e.target.value)}
                   className="w-full rounded border border-gray-200 bg-white p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
                 >
-                  <option>Europe/Paris (CET)</option>
-                  <option>America/New_York (EST)</option>
-                  <option>Asia/Singapore (SGT)</option>
-                  <option>UTC / GMT</option>
+                  <option value="Europe/Paris (CET)">{t("Europe/Paris (CET)", "Europe/Paris (CET)")}</option>
+                  <option value="America/New_York (EST)">{t("America/New_York (EST)", "America/New_York (EST)")}</option>
+                  <option value="Asia/Singapore (SGT)">{t("Asia/Singapore (SGT)", "Asia/Singapore (SGT)")}</option>
+                  <option value="UTC / GMT">UTC / GMT</option>
                 </select>
               </div>
 
@@ -1935,14 +1985,14 @@ export default function PortalView({ currentUser, token, pendingBooking, pending
                   type="submit"
                   className="flex-1 bg-blue-900 hover:bg-blue-950 text-white rounded-lg py-2.5 text-xs font-semibold shadow transition cursor-pointer"
                 >
-                  Book Slot on Calendar
+                  {t("Book Slot on Calendar", "Réserver ce créneau")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsBooking(false)}
                   className="border border-gray-300 hover:bg-gray-50 text-gray-600 rounded-lg px-4 py-2.5 text-xs transition cursor-pointer"
                 >
-                  Cancel
+                  {t("Cancel", "Annuler")}
                 </button>
               </div>
             </form>

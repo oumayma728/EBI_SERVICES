@@ -1,6 +1,7 @@
 import React from "react";
 import { Bell, XCircle } from "lucide-react";
 import { clientDb } from "../clientDb";
+import { useLanguage } from "../LanguageContext";
 
 interface NotificationsModalProps {
   notifications: any[];
@@ -9,6 +10,7 @@ interface NotificationsModalProps {
 }
 
 export default function NotificationsModal({ notifications, onClose, onRefresh }: NotificationsModalProps) {
+  const { language, t } = useLanguage();
   const handleMarkRead = (notifId: string) => {
     const notifs = clientDb.getNotifications();
     const found = notifs.find((n) => n.id === notifId);
@@ -26,7 +28,7 @@ export default function NotificationsModal({ notifications, onClose, onRefresh }
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-1.5 text-blue-900 font-bold">
               <Bell className="h-4 w-4" />
-              <span className="font-display text-sm uppercase tracking-wider">Unread Activity Notifications</span>
+              <span className="font-display text-sm uppercase tracking-wider">{t("Unread notifications", "Notifications non lues")}</span>
             </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 rounded-full p-1 cursor-pointer">
               <XCircle className="h-5 w-5" />
@@ -34,7 +36,7 @@ export default function NotificationsModal({ notifications, onClose, onRefresh }
           </div>
 
           {notifications.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-xs">No active notices.</div>
+            <div className="text-center py-12 text-gray-400 text-xs">{t("No notifications.", "Aucune notification.")}</div>
           ) : (
             <div className="space-y-3">
               {notifications.map((notif) => (
@@ -51,13 +53,15 @@ export default function NotificationsModal({ notifications, onClose, onRefresh }
                         onClick={() => handleMarkRead(notif.id)}
                         className="text-[9px] font-bold text-blue-900 hover:underline"
                       >
-                        Read
+                        {t("Mark as read", "Marquer comme lu")}
                       </button>
                     )}
                   </div>
                   <p className="text-[10px] text-gray-500 leading-relaxed">{notif.message}</p>
                   <span className="block text-[8px] text-gray-400 text-right">
-                    {new Date(notif.createdAt).toLocaleDateString()}
+                    {new Date(notif.createdAt).toLocaleDateString(
+                      language === "fr" ? "fr-FR" : "en-US",
+                    )}
                   </span>
                 </div>
               ))}
@@ -69,7 +73,7 @@ export default function NotificationsModal({ notifications, onClose, onRefresh }
           onClick={onClose}
           className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded py-2 text-xs font-semibold"
         >
-          Close Panel
+          {t("Close panel", "Fermer le panneau")}
         </button>
       </div>
     </div>

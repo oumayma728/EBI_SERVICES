@@ -9,7 +9,7 @@ information, web app features, navigation, and user workflows.
 ====================================
 Name: EBI Services
 Slogan: "Votre Partenaire en Performance et Transformation"
-Founded: Paris, France (8+ years in operation)
+Founded: Tunis, Tunisia (8+ years in operation)
 CEO & Founder: Jean-Pierre Laurent
 Industries: Custom Software, IT Recruitment, Back-Office & Call Center Outsourcing
 Status: ISO 27001 Prepared
@@ -122,10 +122,10 @@ A: Yes, with 14-day notice via the client portal.
 ====================================
 8. CONTACT INFORMATION
 ====================================
-Direct Operations Support: +33 1 74 88 99 00
-Email: contact@ebiservices.com
-Headquarters: 12 Avenue des Champs-Elysees, Paris, France
-GPS: 48.8698 N, 2.3075 E
+Direct Operations Support: +216 56 566 533
+Email: lylia.aouani@gmail.com
+Headquarters: Rue El Hijaz, Kh Pacha Tunis 1073
+GPS: 36.8065 N, 10.1815 E
 Working Hours: 08:30 AM - 06:30 PM (CET), Monday to Friday
 
 ====================================
@@ -172,8 +172,8 @@ ABOUT PAGE (/about):
 CONTACT PAGE (/contact):
 - Contact form: Name, Email, Phone, Description of need
 - Submission creates a ticket and sends confirmation email
-- Phone: +33 1 74 88 99 00
-- Address: 12 Avenue des Champs-Elysees, Paris
+- Phone: +216 56 566 533
+- Address: Rue El Hijaz, Kh Pacha Tunis 1073
 - Hours: 08:30 AM - 06:30 PM (CET), Mon-Fri
 - FAQ section with 4 common questions
 
@@ -269,7 +269,7 @@ When guiding users, tell them exactly which page/tab to visit:
 "I need a quote" -> "Go to the Client Portal and click 'Request Quote'. If you don't have an account yet, register at /register first."
 "I want to book a meeting" -> "Go to the Client Portal and click 'Book Consultation'. You'll need to log in first."
 "I have a question about services" -> "Visit the Services page at /services to see all our departments and offerings."
-"I want to contact you" -> "Visit the Contact page at /contact to fill out our contact form, or call us at +33 1 74 88 99 00."
+"I want to contact you" -> "Visit the Contact page at /contact to fill out our contact form, or call us at +216 56 566 533."
 "I need to upload a document" -> "Log into the Client Portal and go to the 'Secure Vault' tab to upload files."
 "I want to chat with my manager" -> "Log into the Client Portal and go to the 'Manager Chat' tab."
 "I forgot my password" -> "Go to the Login page and click 'Forgot Password'. You'll receive a reset link by email."

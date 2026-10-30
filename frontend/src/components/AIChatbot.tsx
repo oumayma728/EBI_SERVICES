@@ -16,6 +16,7 @@ import { clientDb } from "../clientDb";
 import { apiCreateLead } from "../api/leads";
 import { post, get } from "../api/client";
 import { departmentKeyForName, getDepartment } from "../departments";
+import { useLanguage } from "../LanguageContext";
 
 function renderMarkdown(text: string): JSX.Element[] {
   const lines = text.split("\n");
@@ -196,12 +197,16 @@ export default function AIChatbot({
   onOpenDepartmentChat,
   onOpenLogin,
 }: AIChatbotProps) {
+  const { language, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       sender: "bot",
-      text: "Hello! I am the EBI Services AI Assistant. I can help explain our custom software development workflows, IT recruitment capabilities, and customer support outsourcing solutions.\n\n**You can ask in English or French.**\n\n---\n\nBonjour ! Je suis l'assistant IA d'EBI Services. Je peux vous renseigner sur nos développements logiciels sur mesure, recrutement IT et solutions d'externalisation.\n\n**Vous pouvez poser vos questions en français ou en anglais.**",
+      text: t(
+        "Hello! I am the EBI Services AI assistant. I can help with our call center services, digital development and recruitment.\n\n**You can ask me questions in English or French.**",
+        "Bonjour ! Je suis l’assistant IA d’EBI Services. Je peux vous renseigner sur nos services de centre d’appels, le développement numérique et le recrutement.\n\n**Vous pouvez me poser vos questions en français ou en anglais.**",
+      ),
       timestamp: new Date(),
     },
   ]);
@@ -221,9 +226,19 @@ export default function AIChatbot({
   const [leadDeadline, setLeadDeadline] = useState("3 Months");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [leadSubmitError, setLeadSubmitError] = useState("");
-  const [conversationLang, setConversationLang] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMessages((current) =>
+      current.length === 1 && current[0].id === "welcome"
+        ? [{ ...current[0], text: t(
+            "Hello! I am the EBI Services AI assistant. I can help with our call center services, digital development and recruitment.\n\n**You can ask me questions in English or French.**",
+            "Bonjour ! Je suis l’assistant IA d’EBI Services. Je peux vous renseigner sur nos services de centre d’appels, le développement numérique et le recrutement.\n\n**Vous pouvez me poser vos questions en français ou en anglais.**",
+          ) }]
+        : current,
+    );
+  }, [t]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -240,15 +255,6 @@ export default function AIChatbot({
   }, [currentUser]);
 
 
-
-  // Detect language based on common patterns
-  const detectLang = (text: string): string => {
-    const frenchPattern = /[àâäéèêëîïôöùûüç]|^(bonjour|salut|je\s|j'|nous|vous|svp|s'il)/i;
-    const englishPattern = /^(hello|hi|hey|i\s|we\s|can\s|how\s|what\s|where\s|when\s|is\s|are\s|please)/i;
-    if (frenchPattern.test(text)) return "fr";
-    if (englishPattern.test(text)) return "en";
-    return "en";
-  };
 
   const redirectWithMessage = (text: string, redirect: () => void) => {
     const msg: ChatMessage = {
@@ -268,11 +274,7 @@ export default function AIChatbot({
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim()) return;
 
-    // Compute language for this message (use existing or detect on first message)
-    const msgLang = conversationLang || detectLang(textToSend);
-    if (!conversationLang) {
-      setConversationLang(msgLang);
-    }
+    const msgLang = language;
 
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -547,7 +549,7 @@ export default function AIChatbot({
       const errorMsg: ChatMessage = {
         id: `bot-${Date.now()}`,
         sender: "bot",
-        text: "L'agent EBI AI est actuellement indisponible. Veuillez reessayer dans quelques instants ou contacter notre equipe directement par formulaire.",
+        text: t("The EBI AI assistant is currently unavailable. Please try again shortly or contact our team using the form.", "L’assistant IA d’EBI Services est momentanément indisponible. Veuillez réessayer ou contacter notre équipe à l’aide du formulaire."),
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -589,7 +591,10 @@ export default function AIChatbot({
         {
           id: `lead-success-${Date.now()}`,
           sender: "bot",
-          text: `Merci, ${leadName} ! Votre demande a été enregistrée et transmise à notre équipe. Nous reviendrons vers vous.`,
+          text: t(
+            `Thank you, ${leadName}! Your request has been sent to our team. We will be in touch.`,
+            `Merci, ${leadName} ! Votre demande a été transmise à notre équipe. Nous reviendrons vers vous.`,
+          ),
           timestamp: new Date(),
         },
       ]);
@@ -598,7 +603,7 @@ export default function AIChatbot({
       setLeadSubmitError(
         err instanceof Error
           ? err.message
-          : "Erreur réseau lors de l’envoi de votre demande.",
+          : t("Network error while sending your request.", "Erreur réseau lors de l’envoi de votre demande."),
       );
     } finally {
       setIsSubmittingForm(false);
@@ -607,38 +612,41 @@ export default function AIChatbot({
 
   const quickActions = [
     {
-      label: "Software Development",
-      dept: "development",
-      text: "Quels services proposez-vous en développement d’applications web et métier ?",
-    },
-    {
-      label: "IT Sourcing & Recruitment",
-      dept: "recruitment",
-      text: "Quels services proposez-vous en recrutement IT et préqualification de candidats ?",
-    },
-    {
-      label: "Tele-services & Support",
+      label: t("Call Center & Support", "Centre d’appels et support"),
       dept: "teleservices",
-      text: "Quels services proposez-vous en téléservices et relation client ?",
+      text: t("What call center and customer support services do you offer?", "Quels services proposez-vous en téléservices et relation client ?"),
     },
     {
-      label: "Demander un devis",
-      text: "Je souhaite demander un devis pour mon projet.",
+      label: t("Software Development", "Développement logiciel"),
+      dept: "development",
+      text: t("What web and business application development services do you offer?", "Quels services proposez-vous en développement d’applications web et métier ?"),
     },
     {
-      label: "Prendre rendez-vous",
-      text: "Je souhaite prendre un rendez-vous.",
+      label: t("IT Sourcing & Recruitment", "Sourcing et recrutement IT"),
+      dept: "recruitment",
+      text: t("What IT recruitment and candidate pre-screening services do you offer?", "Quels services proposez-vous en recrutement IT et préqualification de candidats ?"),
     },
     {
-      label: "Voir les disponibilités",
-      text: "Quels sont vos créneaux disponibles ?",
+      label: t("Request a quote", "Demander un devis"),
+      text: t("I would like to request a quote for my project.", "Je souhaite demander un devis pour mon projet."),
+    },
+    {
+      label: t("Book an appointment", "Prendre rendez-vous"),
+      text: t("I would like to book an appointment.", "Je souhaite prendre un rendez-vous."),
+    },
+    {
+      label: t("Check availability", "Voir les disponibilités"),
+      text: t("What time slots are available?", "Quels sont vos créneaux disponibles ?"),
     },
   ];
   const handleOpenForm = () => {
     const formMsg: ChatMessage = {
       id: `bot-${Date.now()}`,
       sender: "bot",
-      text: "### Formulaire de contact\n\nJe vous redirige vers notre formulaire de contact pour transmettre votre demande à l’équipe EBI Services.",
+      text: t(
+        "### Contact form\n\nI am redirecting you to our contact form so you can send your request to the EBI Services team.",
+        "### Formulaire de contact\n\nJe vous redirige vers notre formulaire de contact pour transmettre votre demande à l’équipe EBI Services.",
+      ),
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, formMsg]);
@@ -664,7 +672,7 @@ export default function AIChatbot({
                 </span>
                 <span className="text-[10px] text-blue-200 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                  Active Expert Assistant
+                  {t("Expert assistant online", "Assistant expert en ligne")}
                 </span>
               </div>
             </div>
@@ -713,7 +721,7 @@ export default function AIChatbot({
                       {m.redirect && (
                         <div className="mb-1.5 inline-flex items-center gap-1 rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                           <CornerDownRight className="h-3 w-3" />
-                          {m.redirect.lang === "fr"
+                              {m.redirect.lang === "fr"
                             ? `Redirection vers le département : ${m.redirect.department}`
                             : `Redirected to department: ${m.redirect.department}`}
                         </div>
@@ -749,18 +757,20 @@ export default function AIChatbot({
                 <div className="flex items-center space-x-2 text-blue-950">
                   <Briefcase className="h-4 w-4" />
                   <span className="font-display text-xs font-bold uppercase tracking-wider">
-                    Demande de contact
+                    {t("Contact request", "Demande de contact")}
                   </span>
                 </div>
                 <p className="text-[11px] text-gray-600 leading-snug">
-                  Décrivez votre besoin et indiquez vos coordonnées. Votre
-                  demande sera transmise à notre équipe.
+                  {t(
+                    "Describe your needs and provide your contact details. Your request will be sent to our team.",
+                    "Décrivez votre besoin et indiquez vos coordonnées. Votre demande sera transmise à notre équipe.",
+                  )}
                 </p>
 
                 <form onSubmit={handleFormSubmit} className="space-y-2">
                   <input
                     type="text"
-                    placeholder="Votre nom *"
+                    placeholder={t("Your name *", "Votre nom *")}
                     required
                     value={leadName}
                     onChange={(e) => setLeadName(e.target.value)}
@@ -768,7 +778,7 @@ export default function AIChatbot({
                   />
                   <input
                     type="text"
-                    placeholder="Entreprise"
+                    placeholder={t("Company", "Entreprise")}
                     value={leadCompany}
                     onChange={(e) => setLeadCompany(e.target.value)}
                     className="w-full rounded border border-gray-200 bg-white p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
@@ -776,7 +786,7 @@ export default function AIChatbot({
                   <div className="grid grid-cols-2 gap-1.5">
                     <input
                       type="email"
-                      placeholder="Adresse e-mail *"
+                      placeholder={t("Email address *", "Adresse e-mail *")}
                       required
                       value={leadEmail}
                       onChange={(e) => setLeadEmail(e.target.value)}
@@ -784,14 +794,14 @@ export default function AIChatbot({
                     />
                     <input
                       type="tel"
-                      placeholder="Téléphone"
+                      placeholder={t("Phone", "Téléphone")}
                       value={leadPhone}
                       onChange={(e) => setLeadPhone(e.target.value)}
                       className="rounded border border-gray-200 bg-white p-2 text-xs focus:ring-1 focus:ring-blue-900 focus:outline-none"
                     />
                   </div>
                   <textarea
-                    placeholder="Décrivez votre besoin (développement, recrutement, téléservices...) *"
+                    placeholder={t("Describe your needs (call center, development, recruitment...) *", "Décrivez votre besoin (centre d’appels, développement, recrutement...) *")}
                     required
                     rows={3}
                     value={leadDesc}
@@ -801,7 +811,7 @@ export default function AIChatbot({
                   <div className="grid grid-cols-2 gap-1.5">
                     <div>
                       <label className="block text-[9px] text-gray-500 font-bold uppercase">
-                        Budget indicatif
+                        {t("Estimated budget", "Budget indicatif")}
                       </label>
                       <select
                         value={leadBudget}
@@ -817,17 +827,17 @@ export default function AIChatbot({
                     </div>
                     <div>
                       <label className="block text-[9px] text-gray-500 font-bold uppercase">
-                        Échéance
+                        {t("Timeline", "Échéance")}
                       </label>
                       <select
                         value={leadDeadline}
                         onChange={(e) => setLeadDeadline(e.target.value)}
                         className="w-full rounded border border-gray-200 bg-white p-1.5 text-[10px] focus:ring-1 focus:ring-blue-900 focus:outline-none"
                       >
-                        <option>Immediate (1 mo)</option>
-                        <option>3 Months</option>
-                        <option>6 Months</option>
-                        <option>Flexible (2026)</option>
+                        <option value="Immediate (1 mo)">{t("Immediate (1 month)", "Immédiat (1 mois)")}</option>
+                        <option value="3 Months">{t("3 months", "3 mois")}</option>
+                        <option value="6 Months">{t("6 months", "6 mois")}</option>
+                        <option value="Flexible (2026)">{t("Flexible (2026)", "Flexible (2026)")}</option>
                       </select>
                     </div>
                   </div>
@@ -847,14 +857,16 @@ export default function AIChatbot({
                       disabled={isSubmittingForm}
                       className="flex-1 bg-blue-900 hover:bg-blue-950 text-white rounded py-2 text-xs font-semibold transition shadow-sm disabled:opacity-55"
                     >
-                      {isSubmittingForm ? "Envoi en cours..." : "Envoyer ma demande"}
+                      {isSubmittingForm
+                        ? t("Sending...", "Envoi en cours...")
+                        : t("Send my request", "Envoyer ma demande")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowLeadForm(false)}
                       className="border border-gray-300 text-gray-600 rounded px-3 py-2 text-xs hover:bg-gray-100 transition"
                     >
-                      Annuler
+                      {t("Cancel", "Annuler")}
                     </button>
                   </div>
                 </form>
@@ -905,7 +917,7 @@ export default function AIChatbot({
           <div className="p-3 border-t border-gray-200 bg-white flex items-center space-x-2">
             <input
               type="text"
-              placeholder="Posez votre question sur nos services..."
+              placeholder={t("Ask a question about our services...", "Posez votre question sur nos services...")}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) =>
@@ -929,7 +941,7 @@ export default function AIChatbot({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-900 text-white shadow-xl hover:bg-blue-950 transition-all duration-300 border border-blue-950/20 active:scale-95 animate-bounce hover:animate-none"
-        title="Chat with AI"
+        title={t("Chat with AI", "Discuter avec l’assistant IA")}
       >
         {isOpen ? (
           <X className="h-6 w-6" />
